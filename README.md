@@ -69,18 +69,19 @@ server {
 ```
 
 ## Install CERTBOT
-
+```
 sudo apt update
 sudo apt install snapd
 sudo snap install core; sudo snap refresh core
 sudo snap install --classic certbot
 sudo ln -s /snap/bin/certbot /usr/bin/certbot
 sudo certbot certonly --nginx
-
+```
 Follow instruction for the domain and get the certificate
+```
 /etc/letsencrypt/live/nodered.encausse.net/fullchain.pem
 /etc/letsencrypt/live/nodered.encausse.net/privkey.pem
-
+```
 Then update the NGinx conf and restart
 
 ## Install NodeJS
