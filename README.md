@@ -126,10 +126,6 @@ pm2 logs
 Here is a documentation about handle to handle multiple private repository
 Source : https://docs.github.com/fr/authentication/connecting-to-github-with-ssh/managing-deploy-keys#using-multiple-repositories-on-one-server
 
-## Git Clone
-
-First you need to clone your repository to your VM using any method (zip, https, ...)
-git clone git@github.com-nodered.encausse.net:JpEncausse/nodered.encausse.net.git
 
 ## Create a Deploy Key
 
@@ -147,4 +143,14 @@ Host github.com-nodered.encausse.net
 Hostname github.com
 IdentityFile ~/.ssh/nodered.encausse.net.pem
 ```
+
+## Git Clone and Push
+
+Clone your repository to your VM using any method (zip, https, ...)
+```
+git clone git@github.com-nodered.encausse.net:JpEncausse/nodered.encausse.net.git
+```
+
+Then try to Git add/commit/push to test if it works.
+
 
