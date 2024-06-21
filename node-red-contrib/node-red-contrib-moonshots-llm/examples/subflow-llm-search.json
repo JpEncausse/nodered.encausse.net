@@ -1,0 +1,666 @@
+[
+    {
+        "id": "63608c8ffd25253a",
+        "type": "subflow",
+        "name": "llm:Model",
+        "info": "\r\nThis node build and cache Azure OpenAI Client.\r\n\r\n# Input\r\n\r\nModel's credential should be provide using environment mechanism. \r\nSo all the custom variable related to the project will be stored in one location.\r\nYou can use a pattern like `env-llm-gpt4-key` for you env variables.\r\n\r\n- Model: the name of the Model\r\n- Key: The Azure API Key\r\n- Endpoint : The Azure API Endpoint\r\n\r\n# Output\r\n\r\nThe model is return into `msg.llm.model`\r\nThe model is cached at Node level.",
+        "category": "Encausse.net",
+        "in": [
+            {
+                "x": 80,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "f8484d1c8d4ce3da"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 410,
+                "y": 60,
+                "wires": [
+                    {
+                        "id": "f8484d1c8d4ce3da",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 460,
+                "y": 120,
+                "wires": [
+                    {
+                        "id": "f8484d1c8d4ce3da",
+                        "port": 1
+                    }
+                ]
+            }
+        ],
+        "env": [
+            {
+                "name": "env-llm-model",
+                "type": "env",
+                "value": "env-llm-model",
+                "ui": {
+                    "icon": "font-awesome/fa-cogs",
+                    "label": {
+                        "en-US": "Model*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-llm-key",
+                "type": "env",
+                "value": "env-llm-key",
+                "ui": {
+                    "icon": "font-awesome/fa-user-secret",
+                    "label": {
+                        "en-US": "Key*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-llm-endpoint",
+                "type": "env",
+                "value": "env-llm-endpoint",
+                "ui": {
+                    "icon": "font-awesome/fa-user-secret",
+                    "label": {
+                        "en-US": "Endpoint*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            }
+        ],
+        "meta": {
+            "module": "node-red-contrib-moonshots-llm",
+            "type": "moonshots-llm-model",
+            "version": "1.0.0",
+            "author": "Jean-Philippe Encausse <Jp@encausse.net>",
+            "desc": "Config Node of Azure OpenAI",
+            "keywords": "Moonshots, NodeRED, LLM, OpenAI",
+            "license": "MIT"
+        },
+        "color": "#9ff6fd",
+        "outputLabels": [
+            "Error",
+            "Build msg.llm.model"
+        ],
+        "icon": "node-red/cog.svg"
+    },
+    {
+        "id": "f8484d1c8d4ce3da",
+        "type": "function",
+        "z": "63608c8ffd25253a",
+        "name": "Build Model",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-model'] = MOONSHOTS['llm-model'] || {}\n\nmsg.llm = msg.llm || {}\n\nlet key      = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-llm-key\"))\nlet endpoint = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-llm-endpoint\"))\nlet id       = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-llm-model\"))\n\nif (!key || !endpoint || !id){\n    msg.llm.error = 'Missing OpenAI credential'\n    return [msg, undefined];\n}\n\n// Retrive Subflow Context\nlet config    = CONTEXT[id]\n\n// Retrieve and/or build a configuration file\nif (!config || !config.client){\n    const { OpenAIClient, AzureKeyCredential } = azureOpenai;\n\n    config = { key, endpoint, id }\n    config.client = new OpenAIClient(config.endpoint, new AzureKeyCredential(config.key));\n    CONTEXT[id] = config;\n    global.set('__MOONSHOTS__', MOONSHOTS)\n}\n\nif (config.client === undefined){\n    msg.llm.error = 'Missing OpenAI client'\n    return [msg, undefined];\n}\n\nmsg.llm.model = config\nreturn node.send([undefined, msg],false);",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "azureOpenai",
+                "module": "@azure/openai"
+            }
+        ],
+        "x": 230,
+        "y": 100,
+        "wires": [
+            [],
+            []
+        ],
+        "icon": "node-red/link-out.svg"
+    },
+    {
+        "id": "5704ae21aaa902c8",
+        "type": "subflow",
+        "name": "llm:Embedding",
+        "info": "This node is a wrapper of Azure OpenAI Client to generate Embedding.\r\nEmbedding are cache into a LRU.\r\n\r\n# Input\r\nModel's credential should be provide using environment mechanism. See llm:Model documentation.\r\n\r\n- Dimension : Size of the embedding array\r\n- Data: The data to convert\r\n- Format: Stringify the embedding\r\n\r\n# Output\r\n\r\nThe node will output a `msg.llm` object with all underlaying elements\r\n 1. Errors (look into msg.llm.error)\r\n 2. Tools to handle\r\n 3. Response",
+        "category": "Encausse.net",
+        "in": [
+            {
+                "x": 60,
+                "y": 80,
+                "wires": [
+                    {
+                        "id": "1da62cbf9b2b1e3e"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 840,
+                "y": 80,
+                "wires": [
+                    {
+                        "id": "e73149b17a11bdb0",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 400,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "073b52d82f0ef7fd",
+                        "port": 1
+                    },
+                    {
+                        "id": "7c2c276230e382e2",
+                        "port": 1
+                    }
+                ]
+            }
+        ],
+        "env": [
+            {
+                "name": "env-llm-model",
+                "type": "env",
+                "value": "env-llm-gpt-model",
+                "ui": {
+                    "icon": "font-awesome/fa-cogs",
+                    "label": {
+                        "en-US": "Embedding*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-llm-key",
+                "type": "env",
+                "value": "env-llm-gpt-key",
+                "ui": {
+                    "icon": "font-awesome/fa-user-secret",
+                    "label": {
+                        "en-US": "Key*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-llm-endpoint",
+                "type": "env",
+                "value": "env-llm-gpt-endpoint",
+                "ui": {
+                    "icon": "font-awesome/fa-user-secret",
+                    "label": {
+                        "en-US": "Endpoint*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-dim",
+                "type": "num",
+                "value": "320",
+                "ui": {
+                    "icon": "font-awesome/fa-arrows",
+                    "label": {
+                        "en-US": "Dimensions*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "num",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-data",
+                "type": "str",
+                "value": "payload",
+                "ui": {
+                    "icon": "font-awesome/fa-align-left",
+                    "label": {
+                        "en-US": "Data*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-format",
+                "type": "bool",
+                "value": "false",
+                "ui": {
+                    "icon": "font-awesome/fa-code",
+                    "label": {
+                        "en-US": "Stringify"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "bool",
+                            "env"
+                        ]
+                    }
+                }
+            }
+        ],
+        "meta": {
+            "module": "node-red-contrib-moonshots-llm",
+            "type": "moonshots-llm-embedding",
+            "version": "1.0.0",
+            "author": "Jean-Philippe Encausse <jp@encausse.net>",
+            "desc": "Wrapper on Azure OpenAI Client for Embeddings",
+            "keywords": "Moonshots, NodeRED, LLM, OpenAI",
+            "license": "MIT"
+        },
+        "color": "#9ff6fd",
+        "icon": "node-red/split.svg"
+    },
+    {
+        "id": "073b52d82f0ef7fd",
+        "type": "function",
+        "z": "5704ae21aaa902c8",
+        "name": "Query OpenAI Embedding",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-embedding'] = MOONSHOTS['llm-embedding'] || {}\n\nlet options = msg.llm.options = { \"dimensions\": msg.llm.dimensions };\n\nlet t0 = Date.now()\nlet model = msg.llm.model\n\ntry { \n    let result = await model.client.getEmbeddings(\n        model.id, \n        msg.llm.data, \n        msg.llm.options\n    );\n    msg.llm.result = result;\n\n} catch(err){\n    msg.llm.error = { err };\n    return node.send([msg, undefined], false);\n}\n\n// Debug duration of API calls\nmsg.llm.debug.duration = (Date.now() - t0); \n\n\n// Handle result assume there is only 1\nlet datas = msg.llm.result.data\nif (!datas || datas.length < 1){\n    msg.llm.error = { err : 'No LLM embeddings' }\n    return node.send([msg, undefined],false);\n}\n\n// Store embedding\nmsg.llm.embedding =datas[0].embedding;\n\n// Stringify\nif (msg.llm.stringify){\n    try { msg.llm.embedding = JSON.stringify(msg.llm.embedding) } \n    catch(err){\n        msg.llm.error = { err }\n        return node.send([msg, undefined],false);\n    }\n}\n\n// Cache into an LRU\nCONTEXT.cache.put(msg.llm.data, msg.llm.embedding)\nreturn node.send([undefined,msg],false);",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 120,
+        "wires": [
+            [
+                "e73149b17a11bdb0"
+            ],
+            []
+        ],
+        "icon": "node-red/link-out.svg"
+    },
+    {
+        "id": "7c2c276230e382e2",
+        "type": "function",
+        "z": "5704ae21aaa902c8",
+        "name": "Variables",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-embedding'] = MOONSHOTS['llm-embedding'] || {}\n\nif (!CONTEXT.cache){\n    CONTEXT.cache = new MOONSHOTS.UTIL.LRUCache(500)\n    global.set('__MOONSHOTS__', MOONSHOTS)\n    node.warn('Building Embedding LRU Cache')\n}\n\n\nmsg.llm = msg.llm || {}\nmsg.llm.debug = msg.llm.debug || {}\n\nmsg.llm.data       = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-data\"))\nmsg.llm.dimensions = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-dim\"))\nmsg.llm.stringify  = env.get(\"env-format\");\n\nlet cache = CONTEXT.cache.get(msg.llm.data)\nif (cache != -1){\n    msg.llm.embedding = cache\n    msg.llm.debug.cache = true;\n    return node.send([undefined, msg],false);\n}\n\nreturn node.send([msg, undefined], false);",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 120,
+        "wires": [
+            [
+                "073b52d82f0ef7fd"
+            ],
+            []
+        ],
+        "icon": "node-red/link-out.svg"
+    },
+    {
+        "id": "1da62cbf9b2b1e3e",
+        "type": "subflow:63608c8ffd25253a",
+        "z": "5704ae21aaa902c8",
+        "name": "Build Model",
+        "x": 190,
+        "y": 80,
+        "wires": [
+            [
+                "e73149b17a11bdb0"
+            ],
+            [
+                "7c2c276230e382e2"
+            ]
+        ]
+    },
+    {
+        "id": "e73149b17a11bdb0",
+        "type": "function",
+        "z": "5704ae21aaa902c8",
+        "name": "Errors",
+        "func": "//node.warn(msg.llm);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 80,
+        "wires": [
+            []
+        ],
+        "icon": "font-awesome/fa-bug"
+    },
+    {
+        "id": "a1e98c1cc76bcf50",
+        "type": "subflow",
+        "name": "llm:Search",
+        "info": "This node return a sorted array of Cosine Similarities\r\n- a String query or an embedding\r\n- an array of documents\r\n\r\n# Input\r\n\r\nModel's credential should be provide using environment mechanism. See llm:Model documentation.\r\n- Query : String or Embedding\r\n- Database: Array of Documents\r\n- Dimensions: Size of Embeddings\r\n\r\nArray of documents must be follow this template. See also llm:extractor documentation\r\n```\r\n[\r\n    {\r\n        chunks : [\r\n            data : {\r\n                data: String\r\n                embedding : [...]\r\n            }\r\n        ]\r\n    }\r\n]\r\n```\r\n",
+        "category": "Encausse.net",
+        "in": [
+            {
+                "x": 60,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "6dfa9ef01e4c69bf"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 480,
+                "y": 60,
+                "wires": [
+                    {
+                        "id": "331f90a37680e229",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 520,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "23207f26a5098aa0",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [
+            {
+                "name": "env-llm-model",
+                "type": "env",
+                "value": "env-llm-gpt-model",
+                "ui": {
+                    "icon": "font-awesome/fa-cogs",
+                    "label": {
+                        "en-US": "Embedding*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-llm-key",
+                "type": "env",
+                "value": "env-llm-gpt-key",
+                "ui": {
+                    "icon": "font-awesome/fa-user-secret",
+                    "label": {
+                        "en-US": "Key*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-llm-endpoint",
+                "type": "env",
+                "value": "env-llm-gpt-endpoint",
+                "ui": {
+                    "icon": "font-awesome/fa-user-secret",
+                    "label": {
+                        "en-US": "Endpoint*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-query",
+                "type": "str",
+                "value": "",
+                "ui": {
+                    "icon": "font-awesome/fa-search",
+                    "label": {
+                        "en-US": "Query"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "json",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-db",
+                "type": "str",
+                "value": "",
+                "ui": {
+                    "icon": "font-awesome/fa-database",
+                    "label": {
+                        "en-US": "Database"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "json",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-dim",
+                "type": "num",
+                "value": "320",
+                "ui": {
+                    "icon": "font-awesome/fa-arrows-h",
+                    "label": {
+                        "en-US": "Dimensions"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "num",
+                            "env"
+                        ]
+                    }
+                }
+            }
+        ],
+        "meta": {
+            "module": "node-red-contrib-moonshots-llm",
+            "type": "moonshots-llm-search",
+            "version": "1.0.0",
+            "author": "Jean-Philippe Encausse <jp@encausse.net>",
+            "desc": "Perform Cosine Similarities on Embeddings",
+            "keywords": "Moonshots, NodeRED, LLM, OpenAI",
+            "license": "MIT"
+        },
+        "color": "#9ff6fd",
+        "icon": "font-awesome/fa-search"
+    },
+    {
+        "id": "23207f26a5098aa0",
+        "type": "function",
+        "z": "a1e98c1cc76bcf50",
+        "name": "Cosine Similarity",
+        "func": "\n// Target Embedding\nconst targetEmbedding = msg.search.targetEmbedding\nconst targetTensor = tf.tensor(targetEmbedding);\n\n// Compute similarities\nlet similarityArray = [];\nfor (let doc of msg.search.db){\n    for (let chunk of doc.chunks.data){\n        const embeddingTensor = tf.tensor(chunk.embedding);\n        const similarity = context.cosineSimilarity(targetTensor, embeddingTensor);\n        similarityArray.push({\n            similarity, \n            'data' : chunk.data,\n            'index': chunk.chunkIndex || 0,\n            'doc'  : doc.source\n        });\n    }\n}\n\nsimilarityArray.sort((a, b) => b.similarity - a.similarity);\nmsg.search.similarityArray = similarityArray\nreturn node.send(msg,false);",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "\ncontext.cosineSimilarity = (a, b) => {\n    const dotProduct = tf.dot(a, b).dataSync()[0];\n    const normA = tf.norm(a).dataSync()[0];\n    const normB = tf.norm(b).dataSync()[0];\n    return dotProduct / (normA * normB);\n}",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "tf",
+                "module": "@tensorflow/tfjs"
+            }
+        ],
+        "x": 370,
+        "y": 140,
+        "wires": [
+            []
+        ],
+        "icon": "node-red/link-out.svg"
+    },
+    {
+        "id": "6dfa9ef01e4c69bf",
+        "type": "function",
+        "z": "a1e98c1cc76bcf50",
+        "name": "Variables",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\nmsg.search       = msg.search || {}\nmsg.search.query = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-query\"))\nmsg.search.db    = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-db\"))\n\n// Query can be a String or an Embedding\nif (typeof msg.search.query == 'string'){\n    return node.send([msg, undefined], false);\n} else {\n    msg.search.targetEmbedding = msg.search.query\n    delete msg.search.query\n    return node.send([undefined, msg], false);\n}\n\n\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 180,
+        "y": 100,
+        "wires": [
+            [
+                "331f90a37680e229"
+            ],
+            [
+                "23207f26a5098aa0"
+            ]
+        ],
+        "icon": "node-red/link-out.svg"
+    },
+    {
+        "id": "331f90a37680e229",
+        "type": "subflow:5704ae21aaa902c8",
+        "z": "a1e98c1cc76bcf50",
+        "name": "",
+        "env": [
+            {
+                "name": "env-llm-model",
+                "value": "env-llm-model",
+                "type": "env"
+            },
+            {
+                "name": "env-llm-key",
+                "value": "env-llm-key",
+                "type": "env"
+            },
+            {
+                "name": "env-llm-endpoint",
+                "value": "env-llm-endpoint",
+                "type": "env"
+            },
+            {
+                "name": "env-dim",
+                "value": "env-dim",
+                "type": "env"
+            },
+            {
+                "name": "env-data",
+                "value": "search.query",
+                "type": "str"
+            },
+            {
+                "name": "env-chunk",
+                "value": "payload.chunk",
+                "type": "str"
+            }
+        ],
+        "x": 350,
+        "y": 80,
+        "wires": [
+            [],
+            [
+                "d1efe93006159623"
+            ]
+        ]
+    },
+    {
+        "id": "d1efe93006159623",
+        "type": "change",
+        "z": "a1e98c1cc76bcf50",
+        "name": "targetEmbedding",
+        "rules": [
+            {
+                "t": "set",
+                "p": "search.targetEmbedding",
+                "pt": "msg",
+                "to": "llm.embedding",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 550,
+        "y": 100,
+        "wires": [
+            [
+                "23207f26a5098aa0"
+            ]
+        ]
+    }
+]
