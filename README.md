@@ -34,12 +34,54 @@ This framework has been continuously evolving over several years and is provided
 ## Introduction
 "Alambic" is an advanced framework built on Node-RED 4.0, specifically designed to accelerate the development of AI and IoT projects. Leveraging the latest features of Node-RED, it externalizes project configurations into environment variables, allowing for more elegant and modular usage within Subflows.
 
-## Features
 The framework is structured around two core components:
 
-Azure ChatGPT Integration: This module enables seamless integration with the Azure OpenAI services, making it possible to design applications that interact directly with the Language Learning Model (LLM) or via a customizable WebChat interface.
+1. Azure ChatGPT Integration: This module enables seamless integration with the Azure OpenAI services, making it possible to design applications that interact directly with the Language Learning Model (LLM) or via a customizable WebChat interface.
 
-WebSocket Communication Protocol: A robust WebSocket-based protocol designed to simplify the creation of web interfaces and facilitate communication with ESP-32 modules. This allows for quick prototyping and development of interactive solutions, extending the framework’s capabilities to a wide range of connected devices.
+2. WebSocket Communication Protocol: A robust WebSocket-based protocol designed to simplify the creation of web interfaces and facilitate communication with ESP-32 modules. This allows for quick prototyping and development of interactive solutions, extending the framework’s capabilities to a wide range of connected devices.
+
+
+## Features
+
+Web Interface
+- Customizable Web Chat with Custom Message protocol
+- Handle LLM Request or Streaming (with partial JSON parsing)
+- Alternate Text2Speech answers with Avatars (lipsync, gesture) support
+- Cookie Authentication
+
+LLM
+- Support to all Azure ChatGPT Models
+- Automatic Chat History Management (and custom context, ...)
+- Complex prompt with JSON output
+- Tool Architecture (add any custom tool)
+- Tool: Bing Search
+- Tool: Scrapping mode: Raw, Clean Page, Main article.
+- Tool: DALLE-3 Image Generation
+- RAG: Simple, In-Memory Chunck, Index, Search and Embeddings
+- Multi-Modal Architecture : Handle image
+- Multi-Bot Architecture : Build Agentic Templates
+
+Other
+- AirTable: Custom Node on top of AirTable API
+
+### Roadmap
+- Add: Upload of Image from WebChat interface (remove URL hack)
+- Add: support to Audio 
+- Add: SSO Authentication
+- Add: Store Chat conversation into Azure Logs (or something else) instead of AirTable
+- Add: Thumb Up/Down rating the conversation + comment
+- Add: Connector to AzureBotFramework
+- UI: Display Previous Chat
+- UI: Easier Upload of RAG documents.
+- Tool: Improve Scraping of YouTube
+- Demo: Custom/Refined History Management
+- Demo: Store History into a Database
+- Demo: Tool using Midjourney unnoficial API
+- Demo: Azure AI Search API Call
+- Demo: ESP-32 communication
+- Rewrite the 3D Avatar component
+- Rewrite the Matterport component
+- Test: Deploy on FlowForge
 
 ## Architecture
 
