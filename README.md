@@ -40,11 +40,15 @@ The framework is structured around two core components:
 
 2. WebSocket Communication Protocol: A robust WebSocket-based protocol designed to simplify the creation of web interfaces and facilitate communication with ESP-32 modules. This allows for quick prototyping and development of interactive solutions, extending the framework’s capabilities to a wide range of connected devices.
 
+![image](https://github.com/user-attachments/assets/2a167183-a3e1-4949-8026-29b8e5bc2510)
+
 
 ## Features
 
 Web Interface
 - Customizable Web Chat with Custom Message protocol
+- Handle Markdown content (Code, Images, ...)
+- Handle Asynchronous Communication, Display LLM progress
 - Handle LLM Request or Streaming (with partial JSON parsing)
 - Alternate Text2Speech answers with Avatars (lipsync, gesture) support
 - Cookie Authentication
@@ -65,6 +69,7 @@ Other
 - AirTable: Custom Node on top of AirTable API
 
 ### Roadmap
+- Doc: Write the documentation on all nodes !
 - Add: Upload of Image from WebChat interface (remove URL hack)
 - Add: support to Audio 
 - Add: SSO Authentication
