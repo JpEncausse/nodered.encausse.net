@@ -1,7 +1,7 @@
 
-# Alambic : Catalyzing Innovation Alchemy
+# ⚗️Alambic : Catalyzing Innovation Alchemy
 
-**Description:** "Alambic" is a collection of powerful Node-RED nodes designed to accelerate innovation projects.
+**Description:** "⚗️Alambic" is a collection of powerful Node-RED nodes designed to accelerate innovation projects.
 
 With a focus on seamless integration, it enables the development of AI and IoT solutions by providing a suite of modules to connect with [Azure ChatGPT](https://learn.microsoft.com/fr-fr/azure/ai-services/openai/concepts/models), [AirTable](https://airtable.com/invite/r/21WM5R4L), and others Azure services. Like an alchemist's distillery, Alambic refines and channels complex workflows into streamlined processes, making it easier to transform ideas into real-world applications.
 
