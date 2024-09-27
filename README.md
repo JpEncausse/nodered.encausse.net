@@ -3,7 +3,7 @@
 
 **Description:** "Alambic" is a collection of powerful Node-RED nodes designed to accelerate innovation projects.
 
-With a focus on seamless integration, it enables the development of AI and IoT solutions by providing a suite of modules to connect with ChatGPT, AirTable, and others Azure services. Like an alchemist's distillery, Alambic refines and channels complex workflows into streamlined processes, making it easier to transform ideas into real-world applications.
+With a focus on seamless integration, it enables the development of AI and IoT solutions by providing a suite of modules to connect with [Azure ChatGPT](https://learn.microsoft.com/fr-fr/azure/ai-services/openai/concepts/models), [AirTable](https://airtable.com/invite/r/21WM5R4L), and others Azure services. Like an alchemist's distillery, Alambic refines and channels complex workflows into streamlined processes, making it easier to transform ideas into real-world applications.
 
 Currently, Alambic is used in several of my side projects (looking for sponsors):
 
@@ -25,23 +25,21 @@ This framework has been continuously evolving over several years and is provided
 2. [Features](#features)
 3. [Architecture](#architecture)
 4. [Installation](#installation)
-5. [Usage](#usage)
-6. [Configuration](#configuration)
-7. [Contributing](#contributing)
+5. [Configuration](#configuration)
+6. [Usage](#usage)
+7. [Virtual Machine](#virtual-machine)
 8. [License](#license)
-9. [Contact](#contact)
 
 ## Introduction
 "Alambic" is an advanced framework built on Node-RED 4.0, specifically designed to accelerate the development of AI and IoT projects. Leveraging the latest features of Node-RED, it externalizes project configurations into environment variables, allowing for more elegant and modular usage within Subflows.
 
-The framework is structured around two core components:
-
-1. Azure ChatGPT Integration: This module enables seamless integration with the Azure OpenAI services, making it possible to design applications that interact directly with the Language Learning Model (LLM) or via a customizable WebChat interface.
-
-2. WebSocket Communication Protocol: A robust WebSocket-based protocol designed to simplify the creation of web interfaces and facilitate communication with ESP-32 modules. This allows for quick prototyping and development of interactive solutions, extending the framework’s capabilities to a wide range of connected devices.
-
 ![image](https://github.com/user-attachments/assets/2a167183-a3e1-4949-8026-29b8e5bc2510)
 
+The framework is structured around two core components:
+
+1. [Azure ChatGPT](https://learn.microsoft.com/fr-fr/azure/ai-services/openai/concepts/models) Integration: This module enables seamless integration with the Azure OpenAI services, making it possible to design applications that interact directly with the Language Learning Model (LLM) or via a customizable WebChat interface.
+
+2. WebSocket Communication Protocol: A robust WebSocket-based protocol designed to simplify the creation of web interfaces and facilitate communication with ESP-32 modules. This allows for quick prototyping and development of interactive solutions, extending the framework’s capabilities to a wide range of connected devices.
 
 ## Features
 
@@ -54,7 +52,7 @@ Web Interface
 - Cookie Authentication
 
 LLM
-- Support to all Azure ChatGPT Models
+- Support to all [Azure ChatGPT](https://learn.microsoft.com/fr-fr/azure/ai-services/openai/concepts/models) Models
 - Automatic Chat History Management (and custom context, ...)
 - Complex prompt with JSON output
 - Tool Architecture (add any custom tool)
@@ -66,7 +64,7 @@ LLM
 - Multi-Bot Architecture : Build Agentic Templates
 
 Other
-- AirTable: Custom Node on top of AirTable API
+- [AirTable](https://airtable.com/invite/r/21WM5R4L): Custom Node on top of AirTable API
 
 ### Roadmap
 - Doc: Write the documentation on all nodes !
@@ -86,35 +84,57 @@ Other
 - Demo: ESP-32 communication
 - Rewrite the 3D Avatar component
 - Rewrite the Matterport component
-- Test: Deploy on FlowForge
+- Test: Deploy on [Flow Fuse](https://flowfuse.com/)
 
 ## Architecture
 
+![image](https://github.com/user-attachments/assets/4065df63-7a70-4002-8ce6-f563dcfcced2)
+
+The Alambic framework is centered around a Node-RED application running on NodeJS. It can be deployed on any cloud provider or using [Flow Fuse](https://flowfuse.com/). Node-RED acts as an orchestrator, exposing web endpoints for web pages, webhooks, and integrations with platforms like Slack or Teams, while interacting with databases and APIs. For practical reasons, all my projects are hosted on Microsoft Azure, leveraging its full range of services.
+
+As a [Microsoft MVP in AI (France)](https://mvp.microsoft.com/publicprofile/5002705) and a member of the Microsoft for Startups Founders Hub, I can facilitate your commercial projects on Azure, both technically and through connections within Microsoft. For any support or collaboration inquiries, [feel free to get in touch](https://moonshots.fr/contact).
+
 ## Installation
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-username/project-name.git
-   cd project-name
-   ```
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Run the project:**
-   ```bash
-   npm start
-   ```
 
-## Usage
-Provide examples of how to use your project. Include code snippets or screenshots when necessary.
+Installing Alambic is straightforward. Simply copy and paste the Node-RED JSON configuration representing the nodes into your Node-RED instance. When upgrading to a new version, make sure to check the "replace" option for all nodes to ensure the changes are applied correctly.
 
-```javascript
-const example = require('project-name');
-example.run();
-```
+![image](https://github.com/user-attachments/assets/7c960a3a-c771-44e6-aa5e-e3575e992058)
+
+Note: Some nodes' behavior may change across releases. While I strive to maintain backward compatibility as much as possible, it may not always be guaranteed. Make sure to review the changelog before upgrading.
+
+For detailed instructions on installing the Virtual Machine on Azure, please refer to the end of the [documentation](#virtual-machine).
+
 
 ## Configuration
-Detail any configurations required, such as environment variables or file settings. Include default values if applicable.
+Each node has its own configuration, which can be customized using Flow or Global environment variables. This allows you to centralize and securely store credentials. The documentation for each node’s fields is still a work in progress.
+
+![image](https://github.com/user-attachments/assets/d6198535-94b5-4d9f-92bc-de669277736f)
+
+I follow a convention where nodes with multiple outputs have the first output dedicated to errors and exit conditions, while the last output is reserved for standard flow continuation. This helps design flows that move rightward and downward without crossing lines. For improved clarity, you can also use link nodes.
+
+By design, each node or group of nodes stores its payload data in a dedicated object, such as `msg.llm` or `msg.airtable`, since `msg.payload` is frequently overridden by other nodes. Most configuration fields can also accept a string that references values within the flow, for example, `msg.cfg.my.data`.
+
+### Usage
+
+This framework is versatile and can be applied to various types of projects. The following example illustrates its use in a WebChat setup:
+
+- The `ws:manager` node handles and routes all incoming WebSocket messages to the appropriate bots, establishing a session mechanism to track user interactions.
+- The `web:chat` node creates a customizable webpage with all necessary components to connect to the server.
+- The `llm:chat` node wraps the llm:openai node, managing the chat flow and allowing you to declare tools or trigger specific behaviors based on incoming data.
+- Finally, the `ws:chat node` sends messages back to the web interface to display chat bubbles or execute any JavaScript commands that modify the page layout dynamically.
+
+![image](https://github.com/user-attachments/assets/eaf768ea-2201-490b-8ac1-66f7371b3d53)
+
+This architecture allows for flexible, real-time interaction between the front-end and back-end components, making it easy to build advanced conversational interfaces.
+
+
+
+
+
+
+
+
+
 
 ## Contributing
 1. Fork the repository.
@@ -126,15 +146,12 @@ Detail any configurations required, such as environment variables or file settin
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## Contact
-F
 
 
 
 
-# INSTALL VM
 
-# INSTALL VM
+# INSTALL VIRTUAL MACHINE
 
 ## Install NGINX
 
@@ -287,5 +304,10 @@ git clone git@github.com-nodered.encausse.net:JpEncausse/nodered.encausse.net.gi
 ```
 
 Then try to Git add/commit/push to test if it works.
+
+
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
 
 
