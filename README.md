@@ -256,7 +256,7 @@ pm2 logs
 ```
 
 
-### GITHUB
+### Github
 Here is a documentation about handle to handle multiple private repository
 Source : https://docs.github.com/fr/authentication/connecting-to-github-with-ssh/managing-deploy-keys#using-multiple-repositories-on-one-server
 
