@@ -130,7 +130,9 @@ This architecture allows for flexible, real-time interaction between the front-e
 
 ## Virtual Machine
 
-Below are some guidelines for setting up multiple Node-RED instances on a Virtual Machine, configured behind a reverse proxy and connected to a GIT repository. This is just one of many ways to deploy a NodeJS server, so feel free to adapt it according to your needs. The documentation will use `nodered.encausse.net` in the samples.
+Below are some guidelines for setting up multiple Node-RED instances on a Virtual Machine, configured behind a reverse proxy and connected to a GIT repository. This is just one of many ways to deploy a NodeJS server, so feel free to adapt it according to your needs. 
+
+The documentation will use `nodered.encausse.net` in the samples. The [Node-RED configuration](https://github.com/JpEncausse/nodered.encausse.net/blob/main/node-red-conf/settings.js) flatten all the directory for a better management.
 
 ### Install NGINX
 
