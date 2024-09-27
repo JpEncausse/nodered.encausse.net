@@ -43,7 +43,7 @@ module.exports = {
      * node-red from being able to decrypt your existing credentials and they will be
      * lost.
      */
-    credentialSecret: "secret", /* FIXME */
+    credentialSecret: "your-secret",
 
     /** By default, the flow JSON will be formatted over multiple lines making
      * it easier to compare changes when using version control.
@@ -513,14 +513,9 @@ module.exports = {
      *    global.get("os")
      */
     functionGlobalContext: {
-	    jssha: require("jssha"),
-        fs   : require("fs"),
-        url  : require("url"),
-        marked: require("marked"),
-        moment : require('moment'),
-        Jimp : require("jimp"),
-        botbuilder : require("botbuilder"),
-        SpeechSDK : require('microsoft-cognitiveservices-speech-sdk'),
+
+/* => HERE   */
+
     },
 
     /** The maximum number of messages nodes will buffer internally as part of their
