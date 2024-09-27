@@ -1,4 +1,91 @@
 
+# Alambic : Catalyzing Innovation Alchemy
+
+**Description:** "Alambic" is a collection of powerful Node-RED nodes designed to accelerate innovation projects.
+
+With a focus on seamless integration, it enables the development of AI and IoT solutions by providing a suite of modules to connect with ChatGPT, AirTable, and others Azure services. Like an alchemist's distillery, Alambic refines and channels complex workflows into streamlined processes, making it easier to transform ideas into real-world applications.
+
+Currently, Alambic is used in several of my side projects (looking for sponsors):
+
+- SARAH, an intelligent home automation project.
+- [Reflets](https://www.youtube.com/watch?v=2n-qs_Ye6PY), a SmartMirror project.
+- [Au Tour De La Table](https://www.youtube.com/watch?v=dpHmAPXHFA8), a connected game project composed of multiple ESP32 modules and other SFX.
+- [Overwatch](https://blog.encausse.net/2023/08/28/veille-3-0-avec-chatgpt-midjourney-et-neurovoice/), a business and technology intelligence project shared through my [website](https://encausse.net) and [newsletter](https://encausse.substack.com/).
+- [Mediaverse](https://www.youtube.com/watch?v=8mfaiVYUaJM), combine Matterport virtual places with Avatars and Speech technologies. 
+- And various ChatBots for multiple clients.
+
+This framework has been continuously evolving over several years and is provided as-is to support the community. If you are looking to develop a commercial project and need assistance, [feel free to reach out for professional support](https://moonshots.fr/contact).
+
+![Status](https://img.shields.io/badge/status-under%20construction-orange) ![Build Status](https://img.shields.io/badge/build-deliver%20as%20is-brightgreen) ![License](https://img.shields.io/badge/license-MIT-blue) ![Version](https://img.shields.io/badge/version-1.0.0-blue)
+
+---
+
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Features](#features)
+3. [Architecture](#architecture)
+4. [Installation](#installation)
+5. [Usage](#usage)
+6. [Configuration](#configuration)
+7. [Contributing](#contributing)
+8. [License](#license)
+9. [Contact](#contact)
+
+## Introduction
+"Alambic" is an advanced framework built on Node-RED 4.0, specifically designed to accelerate the development of AI and IoT projects. Leveraging the latest features of Node-RED, it externalizes project configurations into environment variables, allowing for more elegant and modular usage within Subflows.
+
+## Features
+The framework is structured around two core components:
+
+Azure ChatGPT Integration: This module enables seamless integration with the Azure OpenAI services, making it possible to design applications that interact directly with the Language Learning Model (LLM) or via a customizable WebChat interface.
+
+WebSocket Communication Protocol: A robust WebSocket-based protocol designed to simplify the creation of web interfaces and facilitate communication with ESP-32 modules. This allows for quick prototyping and development of interactive solutions, extending the framework’s capabilities to a wide range of connected devices.
+
+## Architecture
+
+## Installation
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/project-name.git
+   cd project-name
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Run the project:**
+   ```bash
+   npm start
+   ```
+
+## Usage
+Provide examples of how to use your project. Include code snippets or screenshots when necessary.
+
+```javascript
+const example = require('project-name');
+example.run();
+```
+
+## Configuration
+Detail any configurations required, such as environment variables or file settings. Include default values if applicable.
+
+## Contributing
+1. Fork the repository.
+2. Create a new branch (`git checkout -b feature-branch`).
+3. Commit your changes (`git commit -m 'Add new feature'`).
+4. Push to the branch (`git push origin feature-branch`).
+5. Open a pull request.
+
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contact
+F
+
+
+
+
+# INSTALL VM
 
 # INSTALL VM
 
