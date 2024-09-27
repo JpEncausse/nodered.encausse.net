@@ -128,36 +128,14 @@ This framework is versatile and can be applied to various types of projects. The
 This architecture allows for flexible, real-time interaction between the front-end and back-end components, making it easy to build advanced conversational interfaces.
 
 
+## Virtual Machine
 
+Below are some guidelines for setting up multiple Node-RED instances on a Virtual Machine, configured behind a reverse proxy and connected to a GIT repository. This is just one of many ways to deploy a NodeJS server, so feel free to adapt it according to your needs. The documentation will use `nodered.encausse.net` in the samples.
 
-
-
-
-
-
-
-## Contributing
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Commit your changes (`git commit -m 'Add new feature'`).
-4. Push to the branch (`git push origin feature-branch`).
-5. Open a pull request.
-
-## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-
-
-
-
-
-# INSTALL VIRTUAL MACHINE
-
-## Install NGINX
+### Install NGINX
 
 Install an HTTP Proxy in front of the VM to handle multiple Node-RED. 
 Each port follow 1880, 1881, ... for each subdomain
-
 
 ```
 sudo apt-get update
@@ -219,7 +197,9 @@ server {
 }
 ```
 
-## Install CERTBOT
+### Install CERTBOT
+Certbot will create a certificate for your Node-RED. It is very important to protect websocket communication and very tricky with ESP-32 that will use RootCA Certificate.
+
 ```
 sudo apt update
 sudo apt install snapd
@@ -235,28 +215,30 @@ Follow instruction for the domain and get the certificate
 ```
 Then update the NGinx conf and restart
 
-## Install NodeJS
+### Install NodeJS
 
-### NVM (Node Virtual Manager)
+I'm using NVM to sandbox Node version and PM2 to supervise Node Instances.
+
+#### NVM (Node Virtual Manager)
 
 - [Install NVM](https://github.com/nvm-sh/nvm) with wget
 - `nvm install node`
 - `sudo apt-get install -y build-essential`
 
-### Install NCU for update
+#### Install NCU for update
 npm install -g npm-check-updates
 
-### Install PM2
+#### Install PM2
 
 - Install PM2 `npm install -g pm2`
 - Run your start script
 - Follow [instruction for startup and save](https://pm2.keymetrics.io/docs/usage/startup/)
 
-# Install NodeRED
+### Install NodeRED
 
 Go to this repository and `npm install`
 
-### node-red-conf/settings.js
+#### node-red-conf/settings.js
 
 Update the secret then set a password :
 
@@ -264,7 +246,7 @@ Update the secret then set a password :
 - Create a password in command line:
 `node -e "console.log(require('bcryptjs').hashSync(process.argv[1], 8));" your-password-here`
 
-### Start Node-RED
+#### Start Node-RED
 
 ```
 chmod +x ./node-red.sh
@@ -274,12 +256,11 @@ pm2 logs
 ```
 
 
-# GITHUB
+### GITHUB
 Here is a documentation about handle to handle multiple private repository
 Source : https://docs.github.com/fr/authentication/connecting-to-github-with-ssh/managing-deploy-keys#using-multiple-repositories-on-one-server
 
-
-## Create a Deploy Key
+#### Create a Deploy Key
 
 1. In Github > Project > Settings > Deploy Key create a SSH Key for the VM.
 
@@ -287,7 +268,7 @@ Source : https://docs.github.com/fr/authentication/connecting-to-github-with-ssh
 
 3. Change rights `chmod 400 nodered.encausse.net.pem`
 
-### Update Config
+#### Update Config
 Edit `~/.ssh/config` to declare all projects
 
 ```
@@ -296,7 +277,7 @@ Hostname github.com
 IdentityFile ~/.ssh/nodered.encausse.net.pem
 ```
 
-## Git Clone and Push
+#### Git Clone and Push
 
 Clone your repository to your VM using any method (zip, https, ...)
 ```
