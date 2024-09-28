@@ -3,6 +3,9 @@
 
 **Description:** "⚗️Alambic" is a collection of powerful Node-RED nodes designed to accelerate innovation projects.
 
+![image](https://github.com/user-attachments/assets/51a7a640-15c5-4372-bbe3-5ec6ec857f67)
+
+
 With a focus on seamless integration, it enables the development of AI and IoT solutions by providing a suite of modules to connect with [Azure ChatGPT](https://learn.microsoft.com/fr-fr/azure/ai-services/openai/concepts/models), [AirTable](https://airtable.com/invite/r/21WM5R4L), and others Azure services. Like an alchemist's distillery, Alambic refines and channels complex workflows into streamlined processes, making it easier to transform ideas into real-world applications.
 
 Currently, Alambic is used in several of my side projects (looking for sponsors):
