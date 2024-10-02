@@ -109,6 +109,12 @@ For detailed instructions on installing the Virtual Machine on Azure, please ref
 
 
 ## Configuration
+
+### Youtube : Getting Started
+[![DEMO](http://img.youtube.com/vi/jE_VykxWFv8/0.jpg)](http://www.youtube.com/watch?v=jE_VykxWFv8)
+
+
+### In Depth
 Each node has its own configuration, which can be customized using Flow or Global environment variables. This allows you to centralize and securely store credentials. The documentation for each node’s fields is still a work in progress.
 
 ![image](https://github.com/user-attachments/assets/d6198535-94b5-4d9f-92bc-de669277736f)
