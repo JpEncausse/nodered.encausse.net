@@ -405,7 +405,12 @@ module.exports = {
          * See https://github.com/node-red-contrib-themes/theme-collection for
          * a collection of themes to chose from.
          */
-        //theme: "",
+        
+        theme: "github-dark-dimmed",
+
+        page: {
+          css: process.env.PROJECT_ROOT + "/node-red-conf/moonshots-custom.css"
+        },
 
         /** To disable the 'Welcome to Node-RED' tour that is displayed the first
          * time you access the editor for each release of Node-RED, set this to false
