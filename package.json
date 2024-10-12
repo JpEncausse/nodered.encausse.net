@@ -12,16 +12,10 @@
   "author": "Jean-Philippe Encausse",
   "license": "MIT",
   "dependencies": {
-    "airtable": "^0.11.3",
+    "@node-red-contrib-themes/theme-collection": "^4.0.11",
     "bcryptjs": "^2.4.3",
-    "botbuilder": "^4.22.2",
     "jimp": "^0.22.10",
-    "jssha": "^3.2.0",
-    "marked": "^4.3.0",
-    "microsoft-cognitiveservices-speech-sdk": "^1.36.0",
-    "moment": "^2.29.4",
     "node-red": "4.x",
-    "node-red-contrib-loop-processing": "^0.5.1",
-    "node-red-contrib-moonshots-llm": "file:node-red-contrib/node-red-contrib-moonshots-llm"
+    "node-red-contrib-loop-processing": "^0.5.1"
   }
 }
