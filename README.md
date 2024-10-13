@@ -99,7 +99,7 @@ As a [Microsoft MVP in AI (France)](https://mvp.microsoft.com/publicprofile/5002
 
 ## Installation
 
-Installing Alambic is straightforward. Simply copy and paste the [Node-RED JSON configuration](https://github.com/JpEncausse/nodered.encausse.net/blob/main/node-red-contrib/release-v1.0.0) representing the nodes into your Node-RED instance. When upgrading to a new version, make sure to check the "replace" option for all nodes to ensure the changes are applied correctly.
+Installing Alambic is straightforward. Simply copy and paste the [Node-RED JSON configuration](https://github.com/JpEncausse/nodered.encausse.net/blob/main/node-red-contrib/latest-release.json) representing the nodes into your Node-RED instance. When upgrading to a new version, make sure to check the "replace" option for all nodes to ensure the changes are applied correctly.
 
 ![image](https://github.com/user-attachments/assets/7c960a3a-c771-44e6-aa5e-e3575e992058)
 
