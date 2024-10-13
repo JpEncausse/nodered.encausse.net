@@ -1638,7 +1638,7 @@
         "type": "function",
         "z": "f36dcac84e162f71",
         "name": "Build Tools CB",
-        "func": "\nlet chat = msg.llm.chat\nif (msg.llm.toolCalls) {\n    chat.push.apply(chat, msg.llm.toolCalls);\n\n    // Could be optimized checking $env\n    for (let toolback of msg.llm.toolCalls){\n        if (toolback.role != \"tool\") continue;\n        if (!toolback.content || toolback.content.indexOf('LLM_Tool_INTERNAL_Image') < 0) continue;\n        let llm_img = JSON.parse(toolback.content)[\"LLM_Tool_INTERNAL_Image\"]\n        let llm_content = {\"type\" : \"image_url\", \"imageUrl\" : { \"url\" : llm_img }}\n        let llm_tool_user = {\"role\" : \"user\", \"content\" : [llm_content]}\n        msg.llm.chat.push(llm_tool_user)\n        msg.llm.prompt.history.push(llm_tool_user)\n    }\n}\nreturn node.send(msg,false);",
+        "func": "\nlet chat = msg.llm.chat\nif (msg.llm.toolCalls) {\n    chat.push.apply(chat, msg.llm.toolCalls);\n\n    // Could be optimized checking $env\n    for (let toolback of msg.llm.toolCalls){\n        if (toolback.role != \"tool\") continue;\n        if (!toolback.content || toolback.content.indexOf('LLM_Tool_INTERNAL_Image') < 0) continue;\n        let llm_img = JSON.parse(toolback.content)[\"LLM_Tool_INTERNAL_Image\"]\n        let llm_content = {\"type\" : \"image_url\", \"image_url\" : { \"url\" : llm_img }}\n        let llm_tool_user = {\"role\" : \"user\", \"content\" : [llm_content]}\n        msg.llm.chat.push(llm_tool_user)\n        msg.llm.prompt.history.push(llm_tool_user)\n    }\n}\nreturn node.send(msg,false);",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
