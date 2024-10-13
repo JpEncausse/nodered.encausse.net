@@ -2937,7 +2937,7 @@
         "type": "function",
         "z": "681160babea0f830",
         "name": "Results",
-        "func": "let result = msg.llm.result\nlet img    = result.data[0]\n\ndelete img.contentFilterResults\ndelete img.promptFilterResults\n\nmsg.llm.toolCallback(img);\nmsg.payload = 'Revised prompt: ' + img.revisedPrompt\n\nreturn msg;",
+        "func": "let result = msg.llm.result\nlet img    = result.data[0]\n\ndelete img.content_filter_results\ndelete img.prompt_filter_results\n\nmsg.llm.toolCallback(img);\nmsg.payload = 'Revised prompt: ' + img.revised_prompt\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
