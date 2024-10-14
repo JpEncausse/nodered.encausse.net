@@ -686,7 +686,7 @@
         "type": "function",
         "z": "5a761f7b96ed136a",
         "name": "Settings",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\nlet scrap = {}\nscrap.mode   = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-scrap\"))\nscrap.html   = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-html\"))\n\nif (scrap.mode == 'custom'){\n    scrap.custom = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-custom\"))\n}\n\nif (scrap.html){\n    msg.scrap = scrap\n    return [undefined, undefined, msg]\n}\n\nscrap.url = msg.url = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-url\"))\nif (!scrap.url){\n    return [msg, undefined, undefined]\n}\nscrap.header = msg.headers = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-headers\"))\n\nmsg.scrap = scrap\nreturn [undefined, msg, undefined]",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\nlet scrap = {}\nscrap.mode   = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-scrap\"))\nscrap.html   = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-html\"))\n\nif (scrap.mode == 'custom'){\n    scrap.custom = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-custom\"))\n}\n\nif (scrap.html){\n    msg.scrap = scrap\n    return [undefined, undefined, msg]\n}\n\nscrap.url = msg.url = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-url\"))\nif (!scrap.url){\n    return [msg, undefined, undefined]\n}\nscrap.header = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-headers\"))\nif (scrap.header == null || typeof scrap.header !== 'object'){\n    scrap.header = {}\n}\nscrap.header['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Alambic/1.0'\nscrap.header['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'\nscrap.header['Accept-Language'] = 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'\n\nmsg.headers = scrap.header \nmsg.scrap = scrap\nreturn [undefined, msg, undefined]",
         "outputs": 3,
         "timeout": 0,
         "noerr": 0,
@@ -733,7 +733,7 @@
         "type": "function",
         "z": "5a761f7b96ed136a",
         "name": "Clean",
-        "func": "msg.scrap.html = msg.payload\nreturn [undefined, msg];",
+        "func": "node.warn(msg)\nmsg.scrap.html = msg.payload\nreturn [undefined, msg];",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -7676,7 +7676,7 @@
         ],
         "linkType": "static",
         "timeout": "30",
-        "x": 590,
+        "x": 610,
         "y": 200,
         "wires": [
             []
