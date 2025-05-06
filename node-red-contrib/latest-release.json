@@ -54,6 +54,10 @@
                     {
                         "id": "bd0d6cb0f4153113",
                         "port": 0
+                    },
+                    {
+                        "id": "0634dfaea8592bc0",
+                        "port": 0
                     }
                 ]
             }
@@ -191,7 +195,7 @@
         "type": "function",
         "z": "4649143ffb637082",
         "name": "Create Database",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nif (!config.database){ node.warn('Missing database name'); return msg }\n\nlet db = msg.orama.results = MOONSHOTS.ORAMA[config.database]\nif (db){ return msg }\n\nif (!config.payload){ node.warn('Missing payload'); return msg }\n\nnode.warn({debug: \"Building Database\", config});\nMOONSHOTS.ORAMA.upsert = async (db, rec, key) => { \n  const keyField = key || 'id';\n  const keyValue = rec[keyField];\n\n  // No key value\n  if (!keyValue) { return await Orama.insert(db, rec); }\n  let search = { term: keyValue, where: { [keyField]: keyValue }, limit: 1 }\n\n  // No existing results\n  const res = await Orama.search(db, search);\n  if (res.count == 0) { return await Orama.insert(db, rec); }\n\n  // Merge\n  const existing = res.hits[0].document;\n  const merged = { ...existing, ...rec, [keyField]: keyValue };\n\n         await Orama.remove(db, res.hits[0].id)\n  return await Orama.insert(db, merged);\n\n};\n\nmsg.orama.results = MOONSHOTS.ORAMA[config.database] = await Orama.create(config.payload);\n\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nif (!config.database){ node.warn('Missing database name'); return msg }\nif (!config.payload){ node.warn('Missing payload'); return msg }\n\nlet db = msg.orama.results = MOONSHOTS.ORAMA[config.database]\nif (db){ node.warn('Database already exist, overrride'); }\n\nnode.warn({debug: \"Building Database\", config});\nMOONSHOTS.ORAMA.upsert = async (db, rec, key) => { \n  const keyField = key || 'id';\n  const keyValue = rec[keyField];\n\n  // No key value\n  if (!keyValue) { return await Orama.insert(db, rec); }\n  let search = { term: keyValue, where: { [keyField]: keyValue }, limit: 1 }\n\n  // No existing results\n  const res = await Orama.search(db, search);\n  if (res.count == 0) { return await Orama.insert(db, rec); }\n\n  // Merge\n  const existing = res.hits[0].document;\n  const merged = { ...existing, ...rec, [keyField]: keyValue };\n\n         await Orama.remove(db, res.hits[0].id)\n  return await Orama.insert(db, merged);\n\n};\n\nmsg.orama.results = MOONSHOTS.ORAMA[config.database] = await Orama.create(config.payload);\n\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -214,7 +218,7 @@
         "type": "function",
         "z": "4649143ffb637082",
         "name": "Setup",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\nlet db = msg.orama = msg.orama || {}\ndb.config  = {}\n\ndb.config.database =  MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-database\"))\nif (!db.config.database || db.config.database == \"env-database\") return [msg, undefined];\n\ndb.config.query =  MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-query\"))\nif (!db.config.query || db.config.query == \"env-query\") return [msg, undefined];\n\ndb.config.payload =  MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-payload\"))\nnode.warn(db.config.payload)\nif (!db.config.payload || db.config.payload == \"env-payload\") delete db.config.payload;\n\ndb.config.recId =  MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-rec-id\"))\nif (!db.config.recId || db.config.recId == \"env-rec-id\") delete db.config.recId;\n\ndb.results = {}\nreturn [undefined, msg];",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\nlet db = msg.orama = msg.orama || {}\ndb.config  = {}\n\ndb.config.database =  MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-database\"))\nif (!db.config.database || db.config.database == \"env-database\") return [msg, undefined];\n\ndb.config.query =  MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-query\"))\nif (!db.config.query || db.config.query == \"env-query\") return [msg, undefined];\n\ndb.config.payload =  MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-payload\"))\nif (!db.config.payload || db.config.payload == \"env-payload\") delete db.config.payload;\n\ndb.config.recId =  MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-rec-id\"))\nif (!db.config.recId || db.config.recId == \"env-rec-id\") delete db.config.recId;\n\ndb.results = {}\nreturn [undefined, msg];",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -308,7 +312,7 @@
         "type": "function",
         "z": "4649143ffb637082",
         "name": "Upsert Record",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nlet db = MOONSHOTS.ORAMA[config.database]\nif (!db){ node.warn(\"Missing Database \" + config.database); return msg }\nif (!config.payload){ node.warn('Missing payload'); return msg }\n\n// Single record\nif (!Array.isArray(config.payload)){\n    msg.orama.results = await MOONSHOTS.ORAMA.upsert(db, config.payload, config.recId);\n    global.set('__MOONSHOTS__', MOONSHOTS)\n    return msg;\n}\n\n// Batch insert\nif (!config.recId) {\n    msg.orama.results = await Orama.insertMultiple(db, config.payload);\n    global.set('__MOONSHOTS__', MOONSHOTS)\n    return msg;\n}\n\n// Loop upsert\nlet results = msg.orama.results = []\nfor (let rec of config.payload){\n    results.push(await MOONSHOTS.ORAMA.upsert(db, rec, config.recId));\n}\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nlet db = MOONSHOTS.ORAMA[config.database]\nif (!db){ node.warn(\"Missing Database \" + config.database); return msg }\nif (!config.payload){ node.warn('Missing payload'); return msg }\n\n// Single record\nif (!Array.isArray(config.payload)){\n    msg.orama.results = await MOONSHOTS.ORAMA.upsert(db, config.payload, config.recId);\n    global.set('__MOONSHOTS__', MOONSHOTS)\n    return msg;\n}\n\n// Batch insert\nif (!config.recId) {\n    node.warn('Perform insertMultiple on ' + config.payload.length + ' records')\n    msg.orama.results = await Orama.insertMultiple(db, config.payload);\n    global.set('__MOONSHOTS__', MOONSHOTS)\n    return msg;\n}\n\n// Loop upsert\nlet results = msg.orama.results = []\nfor (let rec of config.payload){\n    results.push(await MOONSHOTS.ORAMA.upsert(db, rec, config.recId));\n}\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -377,7 +381,7 @@
         "type": "function",
         "z": "4649143ffb637082",
         "name": "Search Records",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nlet db = MOONSHOTS.ORAMA[config.database]\nif (!db){ node.warn(\"Missing Database \" + config.database); return msg }\nif (!config.payload){ node.warn('Missing payload'); return msg }\n\nmsg.orama.results = await Orama.search(db, config.payload);\nreturn msg;",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config;\nlet db = MOONSHOTS.ORAMA[config.database]\nif (!db){ node.warn(\"Missing Database \" + config.database); return msg }\nif (!config.payload){ node.warn('Missing payload'); return msg }\n\ntry { msg.orama.results = await Orama.search(db, config.payload); } catch(ex){ node.warn(ex) }\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -400,7 +404,7 @@
         "type": "function",
         "z": "4649143ffb637082",
         "name": "Snapshot Database",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nlet db = MOONSHOTS.ORAMA[config.database]\nif (!db){ node.warn(\"Missing Database \" + config.database); return msg; }\n\nmsg.orama.results = await OramaPersist.persist(db, 'json');\nreturn msg;",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nlet db = MOONSHOTS.ORAMA[config.database]\nif (!db){ node.warn(\"Missing Database \" + config.database); return msg; }\n\nmsg.orama.results = await OramaPersist.persist(db, 'binary');\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -427,7 +431,7 @@
         "type": "function",
         "z": "4649143ffb637082",
         "name": "Restore Database",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nif (!config.database){ node.warn('Missing database name'); return msg }\nif (!config.payload){ node.warn('Missing payload'); return msg }\n\nnode.warn(config.payload)\nmsg.orama.results = MOONSHOTS.ORAMA[config.database] = await OramaPersist.restore('json', config.payload);\n\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nif (!config.database){ node.warn('Missing database name'); return msg }\nif (!config.payload){ node.warn('Missing payload'); return msg }\n\nnode.warn(config.payload)\nmsg.orama.results = MOONSHOTS.ORAMA[config.database] = await OramaPersist.restore('binary', config.payload);\n\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2224,23 +2228,19 @@
                 "183522ee54d78303"
             ],
             [
-                "a71d047aac000e5d",
-                "22ed7c1242b0d4c4"
+                "a71d047aac000e5d"
             ],
             [
                 "709d8be2580c8069",
-                "987fc7a7375b0809",
-                "22ed7c1242b0d4c4"
+                "987fc7a7375b0809"
             ],
             [
                 "66c40d0557a2d953",
-                "a17776677d47af2d",
-                "22ed7c1242b0d4c4"
+                "a17776677d47af2d"
             ],
             [
                 "66c40d0557a2d953",
-                "a17776677d47af2d",
-                "22ed7c1242b0d4c4"
+                "a17776677d47af2d"
             ]
         ]
     },
@@ -2683,23 +2683,6 @@
         ],
         "icon": "font-awesome/fa-bug",
         "l": false
-    },
-    {
-        "id": "22ed7c1242b0d4c4",
-        "type": "debug",
-        "z": "f36dcac84e162f71",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 830,
-        "y": 440,
-        "wires": []
     },
     {
         "id": "681160babea0f830",
