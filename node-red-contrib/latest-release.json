@@ -195,7 +195,7 @@
         "type": "function",
         "z": "4649143ffb637082",
         "name": "Create Database",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nif (!config.database){ node.warn('Missing database name'); return msg }\nif (!config.payload){ node.warn('Missing payload'); return msg }\n\nlet db = msg.orama.results = MOONSHOTS.ORAMA[config.database]\nif (db){ node.warn('Database already exist, overrride'); }\n\nnode.warn({debug: \"Building Database\", config});\nMOONSHOTS.ORAMA.upsert = async (db, rec, key) => { \n  const keyField = key || 'id';\n  const keyValue = rec[keyField];\n\n  // No key value\n  if (!keyValue) { return await Orama.insert(db, rec); }\n  let search = { term: keyValue, where: { [keyField]: keyValue }, limit: 1 }\n\n  // No existing results\n  const res = await Orama.search(db, search);\n  if (res.count == 0) { return await Orama.insert(db, rec); }\n\n  // Merge\n  const existing = res.hits[0].document;\n  const merged = { ...existing, ...rec, [keyField]: keyValue };\n\n         await Orama.remove(db, res.hits[0].id)\n  return await Orama.insert(db, merged);\n\n};\n\nmsg.orama.results = MOONSHOTS.ORAMA[config.database] = await Orama.create(config.payload);\n\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nif (MOONSHOTS.ORAMA == undefined) { MOONSHOTS.ORAMA = {}}\n\nlet config = msg.orama.config\nif (!config.database){ node.warn('Missing database name'); return msg }\nif (!config.payload){ node.warn('Missing payload'); return msg }\n\nlet db = msg.orama.results = MOONSHOTS.ORAMA[config.database]\nif (db){ node.warn('Database already exist, overrride'); }\n\nnode.warn({debug: \"Building Database\", config});\n\nMOONSHOTS.ORAMA.upsert = async (db, rec, key) => { \n  const keyField = key || 'id';\n  const keyValue = rec[keyField];\n\n  // No key value\n  if (!keyValue) { return await Orama.insert(db, rec); }\n  let search = { term: keyValue, where: { [keyField]: keyValue }, limit: 1 }\n\n  // No existing results\n  const res = await Orama.search(db, search);\n  if (res.count == 0) { return await Orama.insert(db, rec); }\n\n  // Merge\n  const existing = res.hits[0].document;\n  const merged = { ...existing, ...rec, [keyField]: keyValue };\n\n         await Orama.remove(db, res.hits[0].id)\n  return await Orama.insert(db, merged);\n};\n\nmsg.orama.results = MOONSHOTS.ORAMA[config.database] = await Orama.create(config.payload);\n\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2591,7 +2591,7 @@
             },
             {
                 "name": "env-status-text",
-                "value": "Call Azure OpenAI",
+                "value": "Call LLM Engine",
                 "type": "str"
             }
         ],
@@ -4130,7 +4130,7 @@
         "type": "function",
         "z": "a1cfb6c2775de544",
         "name": "_client_id",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet SOCKETS = MOONSHOTS['web-socket'] = MOONSHOTS['web-socket'] || {}\n\n// Parse the Payload\nmsg.payload = JSON.parse(msg.payload)\n\n// Store _client_id provided by client outside of payload\nif (msg.payload && msg.payload._client_id){\n    msg._client_id = msg.payload._client_id\n}\n\n// Retrieve _client_hint that is a feature of websocket\nif (msg.payload && msg.payload._client_hint){\n    msg._client_hint = msg.payload._client_hint\n}\n\n// Retrieve _client_cookie that is a feature of websocket\nif (msg.payload && msg.payload._client_cookie){\n    msg._client_cookie = msg.payload._client_cookie\n}\n\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn node.send(msg, false);",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet SOCKETS = MOONSHOTS['web-socket'] = MOONSHOTS['web-socket'] || {}\n\nmsg.payload = JSON.parse(msg.payload)\n\n\n// Store _client_id provided by client outside of payload\nif (msg.payload && msg.payload._client_id){\n    msg._client_id = msg.payload._client_id\n}\n\n// Retrieve _client_hint that is a feature of websocket\nif (msg.payload && msg.payload._client_hint){\n    msg._client_hint = msg.payload._client_hint\n}\n\n// Retrieve _client_cookie that is a feature of websocket\nif (msg.payload && msg.payload._client_cookie){\n    msg._client_cookie = msg.payload._client_cookie\n}\n\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn node.send(msg, false);",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -4262,7 +4262,7 @@
         "out": [
             {
                 "x": 1020,
-                "y": 540,
+                "y": 580,
                 "wires": [
                     {
                         "id": "cf9bf6f91a23564c",
@@ -4500,7 +4500,7 @@
         "syntax": "mustache",
         "template": "BODY {\n   \n}\n",
         "output": "str",
-        "x": 720,
+        "x": 740,
         "y": 40,
         "wires": [
             [
@@ -4519,7 +4519,7 @@
         "syntax": "mustache",
         "template": "!function ($) {\n  $.CLIENT = $.CLIENT || {};\n  $.CLIENT.CONFIG =  $.CLIENT.CONFIG || {}\n  \n  $.CLIENT.CONFIG.tts = {\n    url : '{{{env.env-tts-url}}}',\n  },\n\n  $.CLIENT.CONFIG.animate = {\n      bounce: 800,\n      fade:   800,\n  }\n\n\n  // ------------------------------------------\n  //  EVENT\n  // ------------------------------------------\n\n  const fireEvent = $.CLIENT.fireEvent = (name, data) => {\n    let event = $.Event(name);\n    event.custom = { name, data };\n    $(document).trigger(event);\n  }\n\n  const listenEvent = $.CLIENT.listenEvent = (name, callback) => {\n    $(document).on(name, (event) => { callback(event.custom.data) })\n  }\n\n  // ------------------------------------------\n  //  STATUS\n  // ------------------------------------------\n\n  const status = $.CLIENT.status = (type, msg) => {\n    console.log('Status', type, msg);\n  }\n\n  // ------------------------------------------\n  //  UTIL\n  // ------------------------------------------\n\n  const getQueryVariable = (variable) => {\n    var query = window.location.search.substring(1);\n    var vars = query.split('&');\n    for (var i = 0; i < vars.length; i++) {\n      var pair = vars[i].split('=');\n      if (decodeURIComponent(pair[0]) == variable) {\n        return decodeURIComponent(pair[1]);\n      }\n    }\n    console.log('Query variable %s not found', variable);\n  }\n\n\n  const getCookie = (name) => {\n    let cookies = document.cookie.split(';');\n    for(var i=0 ; i < cookies.length ; ++i) {\n        var pair = cookies[i].trim().split('=');\n        if(pair[0] == name){\n            return pair[1] ? decodeURIComponent(pair[1]) : null;\n        }\n    }\n    return null;\n  };\n\n  // ------------------------------------------\n  //  PUBLIC\n  // ------------------------------------------\n\n  $.CLIENT.CONFIG.clientID = getQueryVariable('clientID')\n  if (!$.CLIENT.CONFIG.clientID){\n    var url = new URL(window.location.href);\n    url.searchParams.set('clientID', 'client_' + Date.now());\n    window.location.href = url.href;\n  }\n  console.log('New ClientID:', $.CLIENT.CONFIG.clientID)\n\n  $.CLIENT.CONFIG.clientCookie = getCookie('session')\n  const register = () => {\n    \n  }\n\n  // Initialization on DOM ready\n  $(() => { register(); });\n\n}(jQuery);\n",
         "output": "str",
-        "x": 710,
+        "x": 750,
         "y": 80,
         "wires": [
             [
@@ -4536,9 +4536,9 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "!function ($) {\n\n    $.CLIENT = $.CLIENT || {};\n\n    // ------------------------------------------\n    //  PUBLIC\n    // ------------------------------------------\n\n    const textToSpeech = $.CLIENT.textToSpeech = (text, callback) => {\n\n        // No audio context\n        if (audioCtxt === undefined) { return callback(); }\n\n        // No text to speech (or hack)\n        if (text === undefined || text.length <=1 || !$.CLIENT.CONFIG.tts.url ) { return callback(); }\n\n        // Call a text to speech services\n        $.CLIENT.status($.CLIENT.STATUS.NETWORK, 'Text to speech ...');\n        $.CLIENT.ajax($.CLIENT.CONFIG.tts.url, { 'text': text, '_client_id' : $.CLIENT.CONFIG.clientID, 'buffer': false }, (err, result) => {\n            stopAudio();\n\n            if (err || !result){ \n                if (callback) callback(); \n                return; \n            }\n\n            // Parse results (we ask for a JSON with buffer=false)\n            let json = JSON.parse(result)\n            if (!json.buffer){\n                console.log('Error reading buffer', text)\n                if (callback) callback(); \n                return; \n            }\n\n            // Convert back Binary Buffer (?? work on buffer.data field)\n            const binary = new ArrayBuffer(json.buffer.data.length)\n            const view   = new Uint8Array(binary);\n            for (let i = 0; i < json.buffer.data.length; ++i) {\n                view[i] = json.buffer.data[i];\n            }\n            \n             // Play audio\n             playAudio(binary, callback);\n             playSSML(json.ssml.viseme, 'tts:viseme')\n             playSSML(json.ssml.bookmarks, 'tts:bookmarks')\n        })\n    }\n\n    const stopAudio = $.CLIENT.stopSpeech = (text, callback) => {\n        if (!bufferSource) return false;\n        bufferSource.stop();\n        bufferSource = undefined;\n        return true;\n    }\n\n\n    let bufferSource = undefined;\n    const playAudio = $.CLIENT.playAudio = (data, callback) => {\n        if (audioCtxt === undefined) return callback(); // require a page gesture\n        if (data === undefined) return callback(); // require an audio\n        $.CLIENT.status($.CLIENT.STATUS.SPEAKER, 'Playing audio ...', undefined, 0); // Manual\n        $.CLIENT.fireEvent('tts:audio:start', {})\n        try {\n            audioCtxt.decodeAudioData(data, function(buffer) {\n                let source  = bufferSource = audioCtxt.createBufferSource();\n                source.buffer = buffer;\n                source.addEventListener('ended', () => { \n                    $.CLIENT.clearStatus(); \n                    $.CLIENT.fireEvent('tts:audio:end', {})\n                    if (callback) callback(); \n                });\n                source.connect(audioCtxt.destination);\n                source.start(0);\n            }, (e) => { \n                bufferSource = undefined; \n                $.CLIENT.clearStatus(); if (callback) callback(); \n            });\n        } catch (ex){\n            console.error(ex);\n        }\n    }\n\n    const playSSML = $.CLIENT.playSSML = (ssml, event, callback) => {\n        if (!ssml){ if (callback) callback(); return;}\n\n        let timer = Date.now()\n        let index = 0\n\n        let handleTimer = () => {\n\n            if (index >= ssml.length){  \n                $.CLIENT.fireEvent(event, { index, ssml }) // notify end\n                if (callback){ callback(); } \n                return; \n            }\n\n            // Send event\n            $.CLIENT.fireEvent(event, {\n                index, elm : ssml[index], ssml\n            })\n\n            // Wait for next\n            let offset    = Math.round(ssml[index].privAudioOffset  / 10000)\n            let elapse    = Date.now() - timer\n            let duration  = offset - elapse\n\n            index += 1\n            if (duration < 0){  return handleTimer(); }\n            setTimeout(handleTimer, duration)\n        }\n\n        handleTimer();\n    }\n\n\n    // ------------------------------------------\n    //  PRIVATE\n    // ------------------------------------------\n\n    let audioCtxt;\n    const initAudioContext = () => { \n        if (audioCtxt !== undefined) { return audioCtxt; }\n        try {\n            // Fix up for prefixing\n            window.AudioContext = window.AudioContext || window.webkitAudioContext;\n            audioCtxt = new AudioContext();\n\n            if (audioCtxt.state === 'suspended') {\n                if (document.autoplayPolicy === 'allowed') {\n                  console.log(\"State is suspended only because hardware is slow.\");\n                }\n                if (document.autoplayPolicy === 'disallowed' ||\n                    document.autoplayPolicy === 'allowed-muted') {\n                    console.log(\"State is suspended because of the autoplay policy.\");\n                    audioCtxt.resume();\n                }\n            }\n\n        } catch (err) {\n            console.log(\"Error: \", err);\n            audioCtxt = undefined;\n        }\n\n        console.log(\"Init Audio Context\");\n        return audioCtxt;\n    }\n\n    // ------------------------------------------\n    //  REGISTER\n    // ------------------------------------------\n\n    const register = () => {\n        $(document).on('click', initAudioContext)\n        $.CLIENT.listenEvent('ws:audio', (msg) => {\n            let data = msg.message.event.value\n            playAudio(data, () => {\n                $.CLIENT.sendAck(msg.replyId) \n            });\n        });\n    }\n\n    // Initialization on DOM ready\n    $(() => { register(); });\n\n}(jQuery);",
+        "template": "!function ($) {\n\n    $.CLIENT = $.CLIENT || {};\n\n    // ------------------------------------------\n    //  PUBLIC\n    // ------------------------------------------\n\n    const textToSpeech = $.CLIENT.textToSpeech = (text, callback, onEdge) => {\n\n        // No audio context\n        if (audioCtxt === undefined) { return callback(); }\n\n        // Edge status\n        if (!$.CLIENT.CONFIG.tts.url){ onEdge = true }\n\n        // No text to speech (or hack)\n        if (text === undefined || text.length <=1) { return callback(); }\n\n        // Edge case\n        if (onEdge){\n            return playAudio(text, callback);\n        }\n\n        // Call a text to speech services\n        remote_textToSpeech(text, (err, json, binary) => {\n            stopAudio();\n\n            if (err || !json){ \n                console.log(err);\n                if (callback) callback(); \n                return; \n            }\n\n            // Play audio\n            playAudio(binary, callback);\n            playSSML(json.ssml.viseme, 'tts:viseme')\n            playSSML(json.ssml.bookmarks, 'tts:bookmarks')\n        })\n    }\n\n    const remote_textToSpeech = (text, callback) => {\n        $.CLIENT.status($.CLIENT.STATUS.NETWORK, 'Text to speech ...');\n        $.CLIENT.ajax($.CLIENT.CONFIG.tts.url, { 'text': text, '_client_id' : $.CLIENT.CONFIG.clientID, 'buffer': false }, (err, result) => {\n            if (err || !result){ \n                if (callback) callback(err || 'no results'); \n                return; \n            }\n\n            // Parse results (we ask for a JSON with buffer=false)\n            let json = JSON.parse(result)\n            if (!json.buffer){\n                if (callback) callback('Error reading buffer:' + text); \n                return; \n            }\n\n            // Convert back Binary Buffer (?? work on buffer.data field)\n            const binary = new ArrayBuffer(json.buffer.data.length)\n            const view   = new Uint8Array(binary);\n            for (let i = 0; i < json.buffer.data.length; ++i) {\n                view[i] = json.buffer.data[i];\n            }\n            \n            if (callback) callback(false, json, binary);\n        })\n    }\n\n    const stopAudio = $.CLIENT.stopSpeech = (text, callback) => {\n        if (!bufferSource) return false;\n        bufferSource.stop();\n        bufferSource = undefined;\n        return true;\n    }\n\n    const playAudio = $.CLIENT.playAudio = (data, callback) => {\n        if (data === undefined) return callback(); // require an audio\n        $.CLIENT.status($.CLIENT.STATUS.SPEAKER, 'Playing audio ...', undefined, 0); // Manual\n        $.CLIENT.fireEvent('tts:audio:start', {})\n\n        let onAudioEnd = () => {\n            $.CLIENT.clearStatus(); \n            $.CLIENT.fireEvent('tts:audio:end', {})\n            if (callback) callback(); \n        }\n\n        if (typeof data == 'string'){\n            playAudioEdge(data, onAudioEnd)\n        } else {\n            playAudioBinary(data, onAudioEnd)\n        }\n    }\n\n    // Preload voices\n    speechSynthesis.getVoices();\n    const playAudioEdge = (text, callback, locale) => {\n      locale = locale || \"fr-FR\"\n      const voices = speechSynthesis.getVoices();\n      const voice = voices.find(v => v.name.includes(\"Google\") && v.lang === locale);\n      if (!voice) { if (callback) callback(); }\n\n      const utterance = new SpeechSynthesisUtterance(text);\n      utterance.lang = 'fr-FR';\n      utterance.voice = voice;\n      if (callback) utterance.onend = callback\n      speechSynthesis.speak(utterance);\n    }\n\n    let bufferSource = undefined;\n    const playAudioBinary = (binary, callback) => {\n        if (audioCtxt === undefined) return callback(); // require a page gesture\n        try {\n            audioCtxt.decodeAudioData(binary, function(buffer) {\n                let source  = bufferSource = audioCtxt.createBufferSource();\n                source.buffer = buffer;\n                if (callback) source.addEventListener('ended', callback);\n                source.connect(audioCtxt.destination);\n                source.start(0);\n            }, (e) => { \n                bufferSource = undefined; \n                if (callback) callback(); \n            });\n        } catch (ex){\n            console.error(ex);\n        }\n    }\n\n    const playSSML = $.CLIENT.playSSML = (ssml, event, callback) => {\n        if (!ssml){ if (callback) callback(); return;}\n\n        let timer = Date.now()\n        let index = 0\n\n        let handleTimer = () => {\n\n            if (index >= ssml.length){  \n                $.CLIENT.fireEvent(event, { index, ssml }) // notify end\n                if (callback){ callback(); } \n                return; \n            }\n\n            // Send event\n            $.CLIENT.fireEvent(event, {\n                index, elm : ssml[index], ssml\n            })\n\n            // Wait for next\n            let offset    = Math.round(ssml[index].privAudioOffset  / 10000)\n            let elapse    = Date.now() - timer\n            let duration  = offset - elapse\n\n            index += 1\n            if (duration < 0){  return handleTimer(); }\n            setTimeout(handleTimer, duration)\n        }\n\n        handleTimer();\n    }\n\n    // ------------------------------------------\n    //  PRIVATE\n    // ------------------------------------------\n\n    let audioCtxt;\n    const initAudioContext = () => { \n        if (audioCtxt !== undefined) { return audioCtxt; }\n        try {\n            // Fix up for prefixing\n            window.AudioContext = window.AudioContext || window.webkitAudioContext;\n            audioCtxt = new AudioContext();\n\n            if (audioCtxt.state === 'suspended') {\n                if (document.autoplayPolicy === 'allowed') {\n                  console.log(\"State is suspended only because hardware is slow.\");\n                }\n                if (document.autoplayPolicy === 'disallowed' ||\n                    document.autoplayPolicy === 'allowed-muted') {\n                    console.log(\"State is suspended because of the autoplay policy.\");\n                    audioCtxt.resume();\n                }\n            }\n\n        } catch (err) {\n            console.log(\"Error: \", err);\n            audioCtxt = undefined;\n        }\n\n        console.log(\"Init Audio Context\");\n        return audioCtxt;\n    }\n\n    // ------------------------------------------\n    //  REGISTER\n    // ------------------------------------------\n\n    const register = () => {\n        $(document).on('click', initAudioContext)\n        $.CLIENT.listenEvent('ws:audio', (msg) => {\n            let data = msg.message.event.value\n            playAudio(data, () => {\n                $.CLIENT.sendAck(msg.replyId) \n            });\n        });\n    }\n\n    // Initialization on DOM ready\n    $(() => { register(); });\n\n}(jQuery);",
         "output": "str",
-        "x": 710,
+        "x": 750,
         "y": 200,
         "wires": [
             [
@@ -4557,7 +4557,7 @@
         "syntax": "mustache",
         "template": "!function ($) {\n\n    $.CLIENT = $.CLIENT || {};\n    $.CLIENT.STATUS = {\n        NONE       : '',\n        ERROR      : 'app-status-error',\n        OK         : 'app-status-ok',\n        WAITING    : 'app-status-waiting',\n        NETWORK    : 'app-status-network',\n        MICROPHONE : 'app-status-microphone',\n        SPEAKER    : 'app-status-speaker',\n        CAMERA     : 'app-status-camera',\n        WATCHING   : 'app-status-watching',\n        HELLO      : 'app-status-hello',\n        BYE        : 'app-status-bye',\n    }\n\n    // ------------------------------------------\n    //  STATUS\n    // ------------------------------------------\n\n    let _status = undefined;\n    let statusHandle;\n    const status = $.CLIENT.status = (status, msg, params, timeout) => {\n\n        // Print console.log() \n        console.log('Status:', msg, params || '');\n\n        // Reset clean timer\n        clearTimeout(statusHandle);\n        \n        // Backup last status\n        let _backup = status + '_' + msg\n        if (_backup !== _status) { // Avoid refresh animation\n            _status = _backup\n\n            // Print HTML\n            let html  = '<div class=\"app-status-wrapper '+ status +'\">';\n                html += '  <div class=\"app-status-icon\"></div>'\n                html += '  <div class=\"app-status-text\">' + msg + '</div>'\n                html += '</div>'\n\n            $('#app-status').html(html);\n        }\n\n        // Manual timeout\n        if (timeout === 0){ return; }\n\n        // Clean status after a timeout\n        statusHandle = setTimeout(clearStatus, timeout || 2000);\n    }\n\n    const clearStatus = $.CLIENT.clearStatus = () => {\n        $('#app-status').html('');\n        _status = undefined;\n    }\n\n    // ------------------------------------------\n    //  PUBLIC\n    // ------------------------------------------\n\n    const handleStatus = (msg) => {\n        let text       = msg.message.event.value.text\n        let params     = msg.message.event.value.params\n        let status     = msg.message.event.value.status\n        let status_css = $.CLIENT.STATUS[status] || status\n        $.CLIENT.status(status_css, text, params)\n        $.CLIENT.sendAck(msg.replyId);\n    }\n\n    const register = () => {\n        $.CLIENT.listenEvent('app:status', handleStatus);\n    }\n\n    // Initialization on DOM ready\n    $(() => { register(); });\n\n}(jQuery);",
         "output": "str",
-        "x": 720,
+        "x": 740,
         "y": 120,
         "wires": [
             [
@@ -4576,7 +4576,7 @@
         "syntax": "mustache",
         "template": "!function ($) {\n\n    $.CLIENT = $.CLIENT || {};\n\n    // ------------------------------------------\n    //  AJAX\n    // ------------------------------------------\n\n    const ajax = $.CLIENT.ajax = (url, params, callback, method, raw) => {\n        \n        let options = {\n            url: url, \n            data: params,\n            type: method || 'GET', \n            traditional: true\n        }\n\n        // Send blob as raw binary (without processing)\n        if (raw){\n            options.processData = false\n            options.contentType = false\n        }\n\n        // Build Request\n        let request = $.ajax(options);\n        \n        // Handle Response\n        request.done((data) => {\n            if (callback) callback(undefined, data);\n        });\n        \n        // Handle Error\n        request.fail(( jqXHR, textStatus, errorThrown ) => {\n            console.error(textStatus, errorThrown);\n        });\n    }\n\n    const ajaxBlob = $.CLIENT.ajaxBlob = (url, blob, callback) => {\n        let data = new FormData();\n        data.append(\"blobData\", blob);\n        $.CLIENT.ajax(url, data, callback, 'POST', true)\n    }\n\n    const ajaxBuffer = $.CLIENT.ajaxBuffer = (url, params, callback, method) => {\n\n        method = method || 'GET';\n        if (method === 'GET'){ \n            url += '?' + $.param(params);\n        }\n\n        let request = new XMLHttpRequest();\n            request.open(method, url, true);\n            request.responseType  = \"arraybuffer\";\n            request.onload  = (e) => { callback(undefined, request.response) };\n            request.onerror = ( ) => { console.error(\"An error occurred during the XMLHttpRequest\", url) };\n            request.send(method !== 'GET' ? JSON.stringify(params || {}) : undefined)\n    }\n\n    // ------------------------------------------\n    //  REFRESH\n    // ------------------------------------------\n\n    const _target = (target, callback) => {\n        if (!target){ return; }\n\n        let $target = $(target);\n        if ($target.length <= 0){\n            location.reload();\n            if (callback) callback();\n            return;\n        }\n\n        $target.removeClass('fadeIn').addClass('fadeOut');\n        return $target;\n    }\n\n    const updateHTML = $.CLIENT.updateHTML = (html, target, callback) => {\n        let $target = _target(target, callback)\n        if ($target === undefined) { return; }\n\n        setTimeout(() => {\n            $target.html(html)\n            $target.removeClass('fadeOut').addClass('fadeIn');\n            if (callback) callback();\n        }, 500)\n    }\n\n    const refresh = $.CLIENT.refresh = (url, params, target, callback, method) => {\n        let $target = _target(target, callback)\n        if ($target === undefined) { return; }\n\n        // Handle Response\n        ajax(url, params, (err, html) => {\n            let content = clean(html);\n            if (content){\n               \n                $target.html(content.body)\n                $target.removeClass('fadeOut').addClass('fadeIn');\n                \n                // Can also work on $target attributes\n            }\n            if (callback) callback();\n\n            // Fire pseudo event\n            let event = $.Event(\"ajax:ready\");\n            event.refresh         = {};\n            event.refresh.$target = $target;\n            $(document).trigger(event);\n            \n        }, method);\n    }\n\n    let clean = (html) => {\n\n        html = html.trim();\n        let patternDIV = new RegExp('^(<div[^>]*ajax-body[^>]*>)(.*)','gi');\n        let mtch = patternDIV.exec(html);\n        if (!mtch){ return false; }\n    \n        let $wrap = $(mtch[1]+'</div>');\n        \n        html = html.replace(patternDIV, '$2');\n        html = html.substring(0, html.lastIndexOf(\"</div>\"));\n        return { 'body' : html , '$wrapper' : $wrap };\n    }\n\n    // ------------------------------------------\n    //  REGISTER\n    // ------------------------------------------\n\n    const register = () => {\n        $.CLIENT.listenEvent('mirror:refresh', (msg) => {\n            let value = msg.message.event.value;\n            let callback = (err) => { $.CLIENT.sendAck(msg.replyId); }\n\n            if (value.html !== undefined){\n                $.CLIENT.updateHTML(value.html, value.target, callback)\n            } else {\n                $.CLIENT.refresh(value.url, undefined, value.target, callback);\n            }\n        });\n    }\n\n    // Initialization on DOM ready\n    $(() => { register(); });\n\n}(jQuery);",
         "output": "str",
-        "x": 710,
+        "x": 750,
         "y": 160,
         "wires": [
             [
@@ -4595,7 +4595,7 @@
         "syntax": "mustache",
         "template": "!function ($) {\n\n    $.CLIENT = $.CLIENT || {};\n    $.CLIENT.portlet = $.CLIENT.portlet || {};\n    $.CLIENT.portlet.puppet = $.CLIENT.portlet.puppet || {};\n\n    // ------------------------------------------\n    //  SPEAK\n    // ------------------------------------------\n\n    const speak = $.CLIENT.portlet.puppet.speak = (ssml, audio, callback) => {\n        $.CLIENT.playAudio(audio, callback);\n        $.CLIENT.playSSML(ssml.viseme,    'tts:viseme')\n        $.CLIENT.playSSML(ssml.bookmarks, 'tts:bookmarks')\n    }\n\n    const handleSpeak = (msg) => {\n\n        let value = msg.message.event.value\n        if(!value){ return $.CLIENT.sendAck(msg.replyId); }\n\n        speak(value.ssml, value.buffer, () => {\n            $.CLIENT.sendAck(msg.replyId);\n        })\n    }\n\n    // ------------------------------------------\n    //  PRIVATE\n    // ------------------------------------------\n\n    let pluginsReady = false;\n    const init = ($canvas, callback) => {\n\n        $.CLIENT.portlet.puppet.$canvas = $canvas;\n        const scene  =  $.CLIENT.portlet.puppet.scene = new THREE.Scene();\n        const canvas = $canvas[0];\n\n        // ------------------------------------------\n        //  SIZES\n        // ------------------------------------------\n\n        const sizes = {\n            width:  $canvas.width(),\n            height: $canvas.height()\n        }\n\n        // ------------------------------------------\n        //  CAMERA\n        // ------------------------------------------\n\n        const camera = $.CLIENT.portlet.puppet.camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)\n        camera.position.x = 0\n        camera.position.y = 1\n        camera.position.z = 4\n        camera.lookAt(1,1,1);\n\n        scene.add(camera)\n \n        // ------------------------------------------\n        //  RENDERER\n        // ------------------------------------------\n\n        const renderer = $.CLIENT.portlet.puppet.renderer = new THREE.WebGLRenderer({\n            canvas: canvas,\n            antialias: true,\n            transparent: true,\n        })\n\n        renderer.setSize(sizes.width, sizes.height)\n        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))\n        renderer.setClearColor( 0x000000, 0 );\n        renderer.render(scene, camera);\n        \n\n        // ------------------------------------------\n        //  LIGHT\n        // ------------------------------------------\n\n        const ambientLight = new THREE.AmbientLight(0xffffff, 1)\n        scene.add(ambientLight)\n\n        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5)\n        directionalLight.castShadow = true\n        directionalLight.position.set(0, 0.5, 0)\n        scene.add(directionalLight)\n\n        // ------------------------------------------\n        //  ELEMENTS\n        // ------------------------------------------\n/*\n        const sphere = new THREE.SphereGeometry( 0.5, 32, 32 )\n        const light1 = new THREE.PointLight( 0xff0040, 2, 5 )\n        light1.add( new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) )\n        light1.position.set(1, 0.5, -2)\n        light1.scale.set(2,2,2)\n        scene.add( light1 )\n\n        const sphere2 = new THREE.SphereGeometry( 1, 32, 32 )\n        const light2 = new THREE.PointLight( 0x9514ff, 3, 10 )\n        light2.add( new THREE.Mesh( sphere2, new THREE.MeshBasicMaterial( { color: 0x9514ff } ) ) )\n        light2.position.set(0, 1, -1)\n        light2.scale.set(0.2,0.2,0.2)\n        scene.add( light2 )\n        \n        const sphere3 = new THREE.SphereGeometry( 1, 32, 32 )\n        const light3 = new THREE.PointLight( 0xff14c0, 3, 10 )\n        light3.add( new THREE.Mesh( sphere3, new THREE.MeshBasicMaterial( { color: 0xff14c0 } ) ) )\n        light3.position.set(2, 1, -1)\n        light3.scale.set(0.2,0.2,0.2)\n        scene.add( light3 )\n        \n        const sphere4 = new THREE.SphereGeometry( 1, 32, 32 )\n        const light4 = new THREE.PointLight( 0x146eff, 3, 10 )\n        light4.add( new THREE.Mesh( sphere4, new THREE.MeshBasicMaterial( { color: 0x146eff } ) ) )\n        light4.position.set(1, 2, -1)\n        light4.scale.set(0.2,0.2,0.2)\n        scene.add( light4 )\n*/\n\n        // ------------------------------------------\n        //  ANIMATION\n        // ------------------------------------------\n\n        \n        const animation_callbacks = $.CLIENT.portlet.puppet.animation_callbacks = []\n        const animation = ( elapsedTime ) => {\n\n            // Call all callbacks\n            for (let cb of animation_callbacks){ cb(); }\n\n            // TWEEN callbacks\n            TWEEN.update();\n\n            renderer.render( scene, camera );\n        }\n        renderer.setAnimationLoop( animation );\n\n        // ------------------------------------------\n        //  MODEL\n        // ------------------------------------------\n\n        const loadingManager = new THREE.LoadingManager( () => { /*hasLoaded = true*/ })\n        const gltfLoader     = new THREE.GLTFLoader(loadingManager)\n        gltfLoader.load('assets/model_anim_v3.glb', (model) => {\n\n                let puppet = $.CLIENT.portlet.puppet\n                puppet.avatar = { model }\n                scene.add(model.scene)\n                pluginsReady = true;\n                callback();\n            } \n        )\n    }\n\n\n    // ------------------------------------------\n    //  PLUGIN : AVATAR MIXER\n    // ------------------------------------------\n\n    const initPlugin_AvatarMixer = () => {\n\n        let avatar =  $.CLIENT.portlet.puppet.avatar\n        avatar.mixer = new THREE.AnimationMixer(avatar.model.scene)\n        avatar.mixer.addEventListener('finished', stopAction);\n\n        avatar.actions = {}\n        for (let anim of (avatar.model).animations){\n            avatar.actions[anim.name] = avatar.mixer.clipAction(anim)\n        }\n\n        // Init Scenes (aka Camera/Model position/rotation)\n        initScenes(avatar.model.scene);\n        avatar.model.scene.visible = true\n\n        // Default Action\n        avatar.actions['default'] = avatar.actions['Track_Idle']\n\n        // Setup Animations Loop\n        avatar.actions['Track_Bored']\n        avatar.actions['Track_Cheering'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Clapping'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Counting'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Jumping'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Dance_House']\n        avatar.actions['Track_Fitness_Plank']\n        avatar.actions['Track_Fitness_Plank_End'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Fitness_Plank_Start'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Fitness_Pushup']\n        avatar.actions['Track_Fitness_Pushup_End'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Fitness_Pushup_Start'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Fitness_Situp']\n        avatar.actions['Track_Fitness_Situp_End'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Fitness_Situp_Start'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Fitness_Squat']\n        avatar.actions['Track_Hand_Forward'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Idle'].setLoop(THREE.LoopPingPong)\n        avatar.actions['Track_Idle_Sad'].setLoop(THREE.LoopPingPong)\n        avatar.actions['Track_Idle_Stand'].setLoop(THREE.LoopPingPong) \n        avatar.actions['Track_Hand_Pointing'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Shake_No'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Shake_Yes'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Speaking']\n        avatar.actions['Track_Walk']\n        avatar.actions['Track_Walk_Happy']\n        avatar.actions['Track_Walk_Sad']\n        avatar.actions['Track_Walk_Start'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Walk_Stop'].setLoop(THREE.LoopOnce)\n        avatar.actions['Track_Waving'].setLoop(THREE.LoopOnce)\n\n        const clock = new THREE.Clock();\n        const handleAnimation = () => {\n            let puppet = $.CLIENT.portlet.puppet\n            if (!puppet.avatar || !puppet.avatar.mixer) { return; }\n            puppet.avatar.mixer.update( clock.getDelta() );\n        }\n        $.CLIENT.portlet.puppet.animation_callbacks.push(handleAnimation)\n    }\n\n    let lastAction   = undefined\n    let onceAction   = undefined\n    let onceCallback = undefined\n    let fadeDuration = 0.4;\n\n    const playAction = (name, callback) => {\n        let avatar = $.CLIENT.portlet.puppet.avatar\n        let action = avatar.actions[name]\n        if (lastAction == action){ return; }\n\n        // Stop or Let It Go\n        if (lastAction){\n            if (lastAction === action){ return; }\n            //lastAction.stop()\n            lastAction.fadeOut(fadeDuration)\n        }\n        \n        // Always Play (Once or More)\n        if (onceAction){\n            if (onceAction === action){ return; }\n            stopOnceAction();\n        }\n        \n        //action.play();\n        action.reset().setEffectiveTimeScale( 1 ).fadeIn( fadeDuration ).play();\n\n        // If More store it for later\n        if (action.loop !== THREE.LoopOnce){\n            lastAction = action\n            if (callback) callback();\n        } else {\n            onceAction   = action\n            onceCallback = callback\n        }\n    }\n\n    const stopOnceAction = () => {\n        if (onceAction)  { \n            //onceAction.stop();\n            onceAction.reset().setEffectiveTimeScale( 1 ).fadeOut(fadeDuration).play()\n            onceAction = undefined; \n        }\n        if (onceCallback){ \n            onceCallback(); \n            onceCallback = undefined; \n        }\n    }\n    const stopAction = (reset) => {\n        stopOnceAction();\n        if (!reset && lastAction){ \n            //lastAction.play();\n            lastAction.reset().setEffectiveTimeScale( 1 ).fadeIn( fadeDuration ).play();\n            \n        } else {\n            playAction('default');\n        }\n    }\n\n    const handleAnimate = (msg) => {\n        \n        let value = msg.message.event.value\n        let cb = () => {  $.CLIENT.sendAck(msg.replyId)  }\n        if (!pluginsReady){ return cb(); }\n        playAnimation(value, cb);\n    }\n\n    // ------------------------------------------\n    //  PLUGIN : AVATAR MIXER : PUBLIC PART\n    // ------------------------------------------\n\n    const playAnimation = $.CLIENT.portlet.puppet.playAnimation = (value, cb) => {\n        if(!value){ if (cb) { cb() }; return; }\n        let avatar = $.CLIENT.portlet.puppet.avatar\n\n        // Play a given Animation Track\n        if (value.indexOf('Track') == 0){\n            playAction(value, cb);\n            return;\n        }\n\n        // Show/Hide the Avatar\n        if (value.indexOf('Action') == 0){\n            if (value == 'Action_Hide'){\n                avatar.model.scene.visible = false\n            }\n            if (value == 'Action_Show'){\n                avatar.model.scene.visible = true\n            }\n            if (cb) { cb(); } \n            return;\n        }\n\n        // Move to Scene\n        if (value.indexOf('Scene') == 0){ \n            let split = value.split('_')\n            SCENES[split[1]][split[2]](cb)\n            return;\n        }\n\n        // Look at location\n        if (value.indexOf('Look') == 0){\n            let pointer = $.CLIENT.portlet.puppet.avatar.lookAt\n            let $canvas = $.CLIENT.portlet.puppet.$canvas\n\n            let target = {x : 0, y : 0}\n            let size   = {w : $canvas.width(), h : $canvas.height()}\n            if (value == 'Look_Center'){\n                target.x= size.w / 2\n                target.y= size.h / 2\n            }\n\n            pointer.x =   target.x / size.w * 2 - 1\n            pointer.y = - target.y / size.h * 2 + 1\n\n            if (cb) { cb(); } \n            return;\n        }\n    }\n\n    const SCENES = {\n        center : {\n            data : {\n                position : { x : 1, y : 1, z : 1 },\n                rotation : { x : 0, y : 0, z : 0 }\n            }\n        },\n        left : {\n            data : {\n                position: { x: 1, y: 1, z: 1 },\n                rotation: { x: 0, y: 0, z: 0}\n            }\n        },\n        zoom : {\n            data : {\n                position : { x : 1, y : 1, z : 1 },\n                rotation : { x : 0, y : 0, z : 0 }\n            }\n        },\n    } \n\n    const initScenes = (scene) => {\n        let _position = (ctx) => { scene.position.set(ctx.x, ctx.y, ctx.z)}\n        let _rotation = (ctx) => { scene.rotation.set(ctx.x, ctx.y, ctx.z)}\n\n        SCENES.center.set = (cb) => { _position(SCENES.center.data.position); _rotation(SCENES.center.data.rotation); if (cb){cb()} }\n        SCENES.left.set   = (cb) => { _position(SCENES.left.data.position);   _rotation(SCENES.left.data.rotation);   if (cb){cb()} }\n        SCENES.zoom.set   = (cb) => { _position(SCENES.zoom.data.position);   _rotation(SCENES.zoom.data.rotation);   if (cb){cb()} }\n\n        // Center => Left\n        let cl_walk          = new TWEEN.Tween(SCENES.center.data.position).to(SCENES.left.data.position, 2300).onUpdate(_position).onStart(()   => { playAction('Track_Walk') })\n        let cl_rotate        = new TWEEN.Tween(SCENES.center.data.rotation).to(SCENES.left.data.rotation, 300).onUpdate(_rotation).onComplete(() => { stopAction(true)})\n        SCENES.center.toLeft = (cb) => { SCENES.center.set(); cl_walk.chain(cl_rotate).start(); if (cb){ setTimeout(cb,3000) } }\n        \n        // Center => Zoom\n        let cz_walk          = new TWEEN.Tween(SCENES.center.data.position).to(SCENES.zoom.data.position, 1800).onUpdate(_position).onStart(()   => { playAction('Track_Walk') })\n        let cz_rotate        = new TWEEN.Tween(SCENES.center.data.rotation).to(SCENES.zoom.data.rotation, 0).onUpdate(_rotation).onComplete(() => { stopAction(true)})\n        SCENES.center.toZoom = (cb) => { SCENES.center.set(); cz_walk.chain(cz_rotate).start(); if (cb){ setTimeout(cb,2000) }}\n\n\n        // Zoom => Left\n        let zl_turnback      = new TWEEN.Tween(SCENES.zoom.data.rotation).to({ x: THREE.Math.degToRad(0), y: THREE.Math.degToRad(-160), z: THREE.Math.degToRad(0)}, 500).onUpdate(_rotation).onStart(()   => { playAction('Track_Walk') })\n        let zl_walk          = new TWEEN.Tween(SCENES.zoom.data.position).to(SCENES.left.data.position, 1500).onUpdate(_position)\n        let zl_rotate        = new TWEEN.Tween(SCENES.zoom.data.rotation).to(SCENES.left.data.rotation, 500).onUpdate(_rotation).onComplete(() => { stopAction(true)})\n        SCENES.zoom.toLeft   = (cb) => { SCENES.zoom.set(); zl_turnback.chain(zl_walk.chain(zl_rotate)).start(); if (cb){ setTimeout(cb,2000) }}\n\n    }\n\n\n\n\n    // ------------------------------------------\n    //  PLUGIN : AVATAR SSML\n    // ------------------------------------------\n\n    //  VISEME\n    //  Occulus   : https://developer.oculus.com/documentation/unity/audio-ovrlipsync-viseme-reference\n    //  Microsoft : https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/speech-ssml-phonetic-sets#french-suprasegmentals \n\n    const MS_2_RPM = [\n        { ms :  0, name: '  ',  rpm: [{  id: 0,   dict: ' ',         value: 0    }] },\n        { ms :  1, name: 'eu',  rpm: [{  id: 59,  dict: 'viseme_E',  value: 0.7  }] },\n        { ms :  2, name: 'ae',  rpm: [{  id: 58,  dict: 'viseme_aa', value: 0.7  }] },\n        { ms :  3, name: 'oh',  rpm: [{  id: 61,  dict: 'viseme_O',  value: 0.7  }] },\n        { ms :  4, name: 'un',  rpm: [{  id: 59,  dict: 'viseme_E',  value: 0.7  }] },\n        { ms :  5, name: '  ',  rpm: [{  id: 0,   dict: ' ',         value: 0    }] },\n        { ms :  6, name: 'iy',  rpm: [{  id: 60,  dict: 'viseme_I',  value: 0.7  }] },\n        { ms :  7, name: 'uw',  rpm: [{  id: 62,  dict: 'viseme_U',  value: 0.7  }] },\n        { ms :  8, name: 'ow',  rpm: [{  id: 61,  dict: 'viseme_O',  value: 0.7  }] },\n        { ms :  9, name: '  ',  rpm: [{  id: 0,   dict: ' ',         value: 0    }] },\n        { ms : 10, name: 'ch',  rpm: [{  id: 54,  dict: 'viseme_CH', value: 0.7  }] },\n        { ms : 11, name: '  ',  rpm: [{  id: 0,   dict: ' ',         value: 0    }] },\n        { ms : 12, name: 'x',   rpm: [{  id: 57,  dict: 'viseme_RR', value: 0.7  }] },\n        { ms : 13, name: 'r',   rpm: [{  id: 57,  dict: 'viseme_RR', value: 0.7  }] },\n        { ms : 14, name: 'l',   rpm: [{  id: 56,  dict: 'viseme_nn', value: 0.7  }] },\n        { ms : 15, name: 's',   rpm: [{  id: 55,  dict: 'viseme_SS', value: 0.7  }] },\n        { ms : 16, name: 'sh',  rpm: [{  id: 54,  dict: 'viseme_CH', value: 0.7  }] },\n        { ms : 17, name: 'dh',  rpm: [{  id: 51,  dict: 'viseme_TH', value: 0.7  }] },\n        { ms : 18, name: 'v',   rpm: [{  id: 50,  dict: 'viseme_FF', value: 0.7  }] },\n        { ms : 19, name: 'n‿', rpm: [{  id: 56,  dict: 'viseme_nn', value: 0.7  }] },\n        { ms : 20, name: 'kk',  rpm: [{  id: 53,  dict: 'viseme_kk', value: 0.7  }] },\n        { ms : 21, name: 'p',   rpm: [{  id: 53,  dict: 'viseme_PP', value: 0.7  }] },\n    ]\n\n    const initPlugin_AvatarSSML = () => {\n        let avatar = $.CLIENT.portlet.puppet.avatar\n        let raycastHead\n        avatar.model.scene.traverse((child) => {\n            if (child.name === \"Wolf3D_Head\") {\n                raycastHead = child\n            }\n        })\n\n        let lastRPM = undefined;\n        const handleLipsync = (evt) => {\n    \n            if (lastRPM){\n                raycastHead.morphTargetInfluences[ lastRPM.id ] = 0;\n            } else {\n                playAction('Track_Speaking');\n            }\n    \n            if(!evt.elm) {\n                playAction('default');\n                lastRPM = undefined;\n                return;\n            }\n    \n            lastRPM = MS_2_RPM[evt.elm.privVisemeId].rpm[0]\n            raycastHead.morphTargetInfluences[ lastRPM.id ] = lastRPM.value;\n        }\n    \n        const handleBookmarks= (evt) => {\n            if (!evt.elm){ return; } // no more bookmarks\n    \n            let bookmark = evt.elm.privText\n            if (bookmark.indexOf('puppet') !== 0) return;\n    \n            let action = bookmark.replace('puppet','Track')\n            playAnimation(action);\n        }\n\n        $.CLIENT.listenEvent('tts:viseme',    handleLipsync);\n        $.CLIENT.listenEvent('tts:bookmarks', handleBookmarks);\n    }\n\n    // ------------------------------------------\n    //  PLUGIN : FOLLOW CURSOR\n    // ------------------------------------------\n\n    const initPlugin_FollowCursor = (mouse) => {\n\n        let avatar = $.CLIENT.portlet.puppet.avatar\n        let avatarHead, avatarLeftEye, avatarRightEye, avatarSpine\n        avatar.model.scene.traverse((child) => {\n            if (child.name === \"Head\") {\n                avatarHead = child\n            }\n            if (child.name === \"LeftEye\") {\n                avatarLeftEye = child\n            }\n            if (child.name === \"RightEye\") {\n                avatarRightEye = child\n            }\n            if (child.name === \"Spine2\") {\n                avatarSpine = child\n            }\n            if (child.name === \"Spine1\") {\n                avatarSpine = child\n            }\n        })\n\n        const pointer = $.CLIENT.portlet.puppet.avatar.lookAt = new THREE.Vector2();\n        let $canvas = $.CLIENT.portlet.puppet.$canvas;\n        \n        if (mouse){\n            document.addEventListener( 'mousemove', (event) => {\n                \n                let offset  = $canvas.offset()\n                let size    = { w : $canvas.width(), h : $canvas.height() }\n                \n                if (event.clientX < offset.left || event.clientX > offset.left + size.w) return;\n                if (event.clientY < offset.top  || event.clientY > offset.top  + size.h) return;\n\n                pointer.x =   (event.clientX - offset.left) / size.w * 2 - 1\n                pointer.y = - (event.clientY - offset.top)  / size.h * 2 + 1\n            }) \n        }\n        \n        const handleAnimation = () => {\n            if (!avatar.model){ return; }\n\n            const parallaxX =   pointer.x * 0.5\n            const parallaxY = - pointer.y * 0.5\n\n            avatarHead.rotation.y = parallaxX / 1.5\n            avatarHead.rotation.x = parallaxY / 1.5 - 0.3\n\n            avatarSpine.rotation.y = parallaxX / 4\n            avatarSpine.rotation.x = parallaxY / 4\n\n            avatarLeftEye.rotation.y = parallaxX / 1.5\n            avatarLeftEye.rotation.x = parallaxY / 1.5\n\n            avatarRightEye.rotation.y = parallaxX / 1.5\n            avatarRightEye.rotation.x = parallaxY / 1.5\n        }\n        $.CLIENT.portlet.puppet.animation_callbacks.push(handleAnimation)\n    }\n    \n\n    // ------------------------------------------\n    //  REGISTER\n    // ------------------------------------------\n\n    const register = () => {\n\n        $.CLIENT.listenEvent('puppet:speak',   handleSpeak);\n        $.CLIENT.listenEvent('puppet:animate', handleAnimate);\n        init( $('#puppet-canvas'), () => {    \n            initPlugin_AvatarMixer();\n            initPlugin_FollowCursor();\n            initPlugin_AvatarSSML();\n\n            setTimeout(() => {\n                $.CLIENT.portlet.puppet.avatar.model.scene.position.x = 0.3\n                $.CLIENT.portlet.puppet.avatar.model.scene.position.y = 0\n                $.CLIENT.portlet.puppet.avatar.model.scene.position.z = 2.5\n\n                $.CLIENT.portlet.puppet.avatar.lookAt.y = -0.7\n                $.CLIENT.portlet.puppet.avatar.lookAt.x = -0.3\n            },500)\n            \n\n        });\n    }\n\n    // Initialization on DOM ready\n    $(() => { register(); });\n\n}(jQuery);",
         "output": "str",
-        "x": 720,
+        "x": 740,
         "y": 280,
         "wires": [
             [
@@ -4614,7 +4614,7 @@
         "createDir": true,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 940,
+        "x": 980,
         "y": 160,
         "wires": [
             []
@@ -4632,7 +4632,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 560,
+        "x": 520,
         "y": 80,
         "wires": [
             [
@@ -4652,7 +4652,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 550,
+        "x": 530,
         "y": 40,
         "wires": [
             [
@@ -4685,7 +4685,8 @@
                 "49c6178f76c85d63",
                 "b64ff58b04f0f25c",
                 "24d51b83bc97ddfd",
-                "7bfcfc32429a3bc4"
+                "7bfcfc32429a3bc4",
+                "e00b4ce3a3b833a3"
             ]
         ]
     },
@@ -4701,7 +4702,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 570,
+        "x": 510,
         "y": 200,
         "wires": [
             [
@@ -4721,7 +4722,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 550,
+        "x": 530,
         "y": 120,
         "wires": [
             [
@@ -4741,7 +4742,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 560,
+        "x": 520,
         "y": 160,
         "wires": [
             [
@@ -4761,7 +4762,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 550,
+        "x": 530,
         "y": 280,
         "wires": [
             [
@@ -4781,7 +4782,7 @@
         "template": "<!doctype html>\n<html lang=\"en\">\n    <head>\n        <meta charset=\"utf-8\">\n        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\n        <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css\" rel=\"stylesheet\" integrity=\"sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We\" crossorigin=\"anonymous\">\n        <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css\" integrity=\"sha512-c42qTSw/wPZ3/5LBzD+Bw5f7bSF2oxou6wEb+I/lqeaKV5FDIfMvvRp772y4jcJLKuGUOpbJMdg/BTl50fJYAw==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\" />\n        <link rel=\"stylesheet\" href=\"/css/app.css\"  type=\"text/css\"/>\n        \n",
         "output": "str",
         "x": 530,
-        "y": 400,
+        "y": 440,
         "wires": [
             [
                 "d69cf2496fc9b5c2"
@@ -4797,10 +4798,10 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "\n<!-- FOOTER  -->\n    <script src=\"https://code.jquery.com/jquery-3.6.0.min.js\" integrity=\"sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=\" crossorigin=\"anonymous\"></script>\n    <script src=\"https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js\" integrity=\"sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>\n    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js\" integrity=\"sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj\" crossorigin=\"anonymous\"></script>\n    <script src=\"https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js\"></script>\n    \n    <script src='/js/app.js'></script>\n    <script src='/js/status.js'></script>\n    <script src='/js/ajax.js'></script>\n    <script src='/js/tts.js'></script>\n\n{{#web.ws.url}}\n    <script src='/js/websocket.js'></script>\n    <script>\n        !function ($) {\n            $(() => { $.CLIENT.connect('{{{web.ws.url}}}', {hint : '{{{web.ws.hint}}}', cookie: {{{web.ws.cookie}}}  }); });\n        }(jQuery);\n    </script>\n{{/web.ws.url}}",
+        "template": "\n<!-- FOOTER  -->\n    <script src=\"https://code.jquery.com/jquery-3.6.0.min.js\" integrity=\"sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=\" crossorigin=\"anonymous\"></script>\n    <script src=\"https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js\" integrity=\"sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>\n    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js\" integrity=\"sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj\" crossorigin=\"anonymous\"></script>\n    <script src=\"https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js\"></script>\n    \n    <!-- VAD -->\n    <script src=\"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js\"></script>\n    <script src=\"https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@latest/dist/bundle.min.js\"></script>\n\n    <script src='/js/app.js'></script>\n    <script src='/js/status.js'></script>\n    <script src='/js/ajax.js'></script>\n    <script src='/js/tts.js'></script>\n    <script src='/js/stt.js'></script>\n\n{{#web.ws.url}}\n    <script src='/js/websocket.js'></script>\n    <script>\n        !function ($) {\n            $(() => { $.CLIENT.connect('{{{web.ws.url}}}', {hint : '{{{web.ws.hint}}}', cookie: {{{web.ws.cookie}}}  }); });\n        }(jQuery);\n    </script>\n{{/web.ws.url}}",
         "output": "str",
         "x": 540,
-        "y": 480,
+        "y": 520,
         "wires": [
             [
                 "839d13f73ebe051b"
@@ -4819,7 +4820,7 @@
         "template": "       {{#web.css}}<link rel=\"stylesheet\" href=\"{{{web.css}}}\"  type=\"text/css\"/>{{/web.css}}\n       {{#web.title}}<title>{{{web.title}}}</title>{{/web.title}}\n    </head>\n    <body>\n  \n<!-- HEADER  -->\n",
         "output": "str",
         "x": 540,
-        "y": 440,
+        "y": 480,
         "wires": [
             [
                 "2aa446124b685083"
@@ -4838,7 +4839,7 @@
         "template": "    {{#web.js}}<script src='{{{web.js}}}'></script>{{/web.js}}\n    </body>\n</html>",
         "output": "str",
         "x": 540,
-        "y": 520,
+        "y": 560,
         "wires": [
             [
                 "d03f8245bd6a06f3"
@@ -4857,7 +4858,7 @@
         "template": "{{{web.header.start}}}\n{{{web.header.end}}}\n{{{web.body}}}\n{{{web.footer.start}}}\n{{{web.footer.end}}}",
         "output": "str",
         "x": 890,
-        "y": 560,
+        "y": 600,
         "wires": [
             []
         ]
@@ -4875,7 +4876,7 @@
             }
         ],
         "x": 500,
-        "y": 360,
+        "y": 400,
         "wires": [
             [],
             [
@@ -4902,7 +4903,7 @@
         "repair": false,
         "outputs": 2,
         "x": 310,
-        "y": 380,
+        "y": 420,
         "wires": [
             [
                 "4e4a31bd0e5d9a29"
@@ -4931,7 +4932,7 @@
         "repair": false,
         "outputs": 2,
         "x": 880,
-        "y": 520,
+        "y": 560,
         "wires": [
             [],
             [
@@ -4952,7 +4953,7 @@
         "finalize": "",
         "libs": [],
         "x": 720,
-        "y": 520,
+        "y": 560,
         "wires": [
             [
                 "1c9b744205bc4f1c"
@@ -5016,6 +5017,45 @@
         "wires": [
             [
                 "65567eb6ba579041"
+            ]
+        ]
+    },
+    {
+        "id": "e00b4ce3a3b833a3",
+        "type": "function",
+        "z": "ed6749f4e72bfce1",
+        "name": "js/stt.js",
+        "func": "let staticRoot = env.get(\"env-static\")\nmsg.filename = staticRoot + 'js/stt.js'\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 510,
+        "y": 320,
+        "wires": [
+            [
+                "5fb230e7ae85fabc"
+            ]
+        ]
+    },
+    {
+        "id": "5fb230e7ae85fabc",
+        "type": "template",
+        "z": "ed6749f4e72bfce1",
+        "name": "stt.js",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "!function ($) {\n\n    $.CLIENT = $.CLIENT || {};\n    $.CLIENT.CONFIG =  $.CLIENT.CONFIG || {}\n    $.CLIENT.VAD =  $.CLIENT.VAD || {}\n\n    // ------------------------------------------\n    //  PUBLIC\n    // ------------------------------------------\n\n    const startRecording = $.CLIENT.VAD.startRecording = async () => {\n      if (!$.CLIENT.VAD.vadInstance) await initVAD();\n      await $.CLIENT.VAD.vadInstance.start();\n       $.CLIENT.status($.CLIENT.STATUS.MICROPHONE, 'Start Recording ...');\n    };\n\n    const stopRecording = $.CLIENT.VAD.stopRecording = async () => {\n      if ($.CLIENT.VAD.vadInstance) {\n        await $.CLIENT.VAD.vadInstance.pause();\n        $.CLIENT.status($.CLIENT.STATUS.MICROPHONE, 'Stop Recording ...');\n      }\n    };\n\n    // ------------------------------------------\n    //  PRIVATE\n    // ------------------------------------------\n\n    $.CLIENT.VAD.debugAudio = async (base64, query) => {\n      const audioUrl  = `data:audio/wav;base64,${base64}`\n      const audio = document.createElement(\"audio\")\n      audio.controls = true\n      audio.src = audioUrl\n      $(query).empty().append(audio);\n    }\n\n    $.CLIENT.VAD.sendAudio = async (base64, type) => {\n      type = type || \"ws:audio\"\n      $.CLIENT.send(type, { type: \"audio\",  timestamp: Date.now(), audio: base64 }, false);    \n    }\n\n    const initVAD = async () => {\n      $.CLIENT.VAD.vadInstance = await vad.MicVAD.new({\n        model: \"v5\",\n        positiveSpeechThreshold: 0.4,\n        negativeSpeechThreshold: 0.4,\n        minSpeechFrames: 15,\n        preSpeechPadFrames: 30,\n        onFrameProcessed: (probs, frame) => { if (probs.notSpeech > 0.4) return;  }, // Use for SFX\n        onSpeechEnd: (arr) => {\n          const wavBuffer = vad.utils.encodeWAV(arr)\n          const base64    = vad.utils.arrayBufferToBase64(wavBuffer)\n          $.CLIENT.VAD.debugAudio(base64, '#audio-output')\n          $.CLIENT.VAD.sendAudio(base64, 'ws:audio:vad')\n        }\n      });\n    }\n    \n    // ------------------------------------------\n    //  REGISTER\n    // ------------------------------------------\n\n    const register = () => {\n      $.CLIENT.listenEvent('tts:audio:start', stopRecording)\n      $.CLIENT.listenEvent('tts:audio:end',  () => { \n        if ($.CLIENT.VAD.vadInstance) startRecording() \n      })\n    }\n\n    // Initialization on DOM ready\n    $(() => { register(); });\n\n  }(jQuery);",
+        "output": "str",
+        "x": 750,
+        "y": 320,
+        "wires": [
+            [
+                "05aa51dc607e11c0"
             ]
         ]
     },
@@ -6075,7 +6115,7 @@
         "type": "function",
         "z": "63608c8ffd25253a",
         "name": "Retrieve Model",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-model'] = MOONSHOTS['llm-model'] || {}\n\nmsg.llm = msg.llm || {}\n\nlet key = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-llm-key\"))\nif (key == \"env-llm-key\"){ key = undefined }\n\nlet endpoint = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-llm-endpoint\"))\nif (endpoint == \"env-llm-endpoint\"){ endpoint = undefined }\n\nlet id = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-llm-model\"))\nif (id == \"env-llm-model\"){ id = undefined }\n\n// Check Configuration\nif (!key || !endpoint || !id){\n    msg.llm.error = 'Missing OpenAI credential'\n    return [msg, undefined, undefined];\n}\n\n// Retrive Cached Model\nlet config = msg.llm.model = CONTEXT[id]\nif (config && config.client){\n    return [undefined, msg, undefined];\n}\n\n// Build Model\nmsg.llm.model = { key, endpoint, id }\nreturn [undefined, undefined, msg];",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-model'] = MOONSHOTS['llm-model'] || {}\n\nmsg.llm = msg.llm || {}\n\nlet key = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-llm-key\"))\nif (key == \"env-llm-key\"){ key = undefined }\n\nlet endpoint = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-llm-endpoint\"))\nif (endpoint == \"env-llm-endpoint\"){ endpoint = undefined }\n\nlet id = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-llm-model\"))\nif (id == \"env-llm-model\"){ id = undefined }\n\n// Check Configuration\n//node.warn({key,endpoint,id});\nif (!key || !endpoint || !id){\n    msg.llm.error = 'Missing OpenAI credential'\n    return [msg, undefined, undefined];\n}\n\n// Retrive Cached Model\nlet config = msg.llm.model = CONTEXT[id]\nif (config && config.client){\n    return [undefined, msg, undefined];\n}\n\n// Build Model\nmsg.llm.model = { key, endpoint, id }\nreturn [undefined, undefined, msg];",
         "outputs": 3,
         "timeout": 0,
         "noerr": 0,
@@ -6131,7 +6171,7 @@
         "type": "function",
         "z": "63608c8ffd25253a",
         "name": "OLLAMA",
-        "func": "\n// ------------------------------------------\n//  HELPERS\n// ------------------------------------------\n\nconst showOllama = async (url, name) => {\n  return await fetchOllama(url.replace(/chat$/, \"show\"), {name});\n}\n\nconst fetchOllama = async (url, post) => {\n  const response = await fetch(url, {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(post)\n  });\n\n  let result = await response.text();\n  if (!response.ok) { \n    node.warn({ error: `HTTP ${response.status} - ${response.statusText}`, result})\n  }\n  \n  try { result = JSON.parse(result) } catch(ex){ node.warn(ex) }\n  return result;\n}\n\nconst handleResults = async (results, options) => {\n  let finish_reason  = results.done_reason || 'stop'\n  let message = results.message\n  message.content = message.content.trim();\n\n  if (message.tool_calls){\n    finish_reason = \"tool_calls\"\n    delete message.content\n    let uid = Date.now()\n    for (let tool of message.tool_calls){\n      tool.type = \"function\"\n      tool.id = \"call_ollama_\" + (uid++);\n      //tool['function'].arguments = JSON.stringify(tool['function'].arguments);\n    }\n  }\n  /*\n  try { \n    let json = JSON.parse(message.content);\n    let fctn = json['function']\n    if (json.name && fctn) {\n      \n      message.tool_calls[{\n        \"type\"    : \"function\",\n        \"id\"      : \"call_ollama_function\",\n        \"function\":  {\n          \"name\"     : json.name,\n          \"arguments\": JSON.stringify(fctn.parameters.properties)\n        }\n      }]\n\n      delete message.content\n      finish_reason = \"tool_calls\"\n      node.warn(message)\n    }\n  } catch (ex) { node.warn(ex) }\n*/\n\n  // Follow OpenAI structure\n  results.choices = [{ finish_reason, message }]\n}\n\n// ------------------------------------------\n//  CLIENT\n// ------------------------------------------\n\nlet MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-model'] = MOONSHOTS['llm-model'] || {}\n\nlet config   = msg.llm.model\nlet metadata = await showOllama(config.endpoint, config.id);\n\nconfig.client = {\n    chat  : async (options) => {\n      let post = { \"model\": config.id, \"stream\" : options.stream }\n      if (options?.response_format?.type == 'json_object') { post.format = \"json\"; }\n\n      // Options\n      post.options = { num_ctx: 8192 } // max_context_tokens\n      if (options.temperature)       { post.options.temperature = options.temperature; }\n      //if (options.max_tokens)        { post.options.num_predict = options.max_tokens;  }\n      if (options.frequency_penalty) { post.options.repeat_penalty = options.frequency_penalty; }\n      if (options.presence_penalty)  { post.options.presence_penalty = options.presence_penalty; }\n\n      // Tools\n      if (metadata.capabilities.includes(\"tools\") && options.tools){\n        post.tools = options.tools\n      }\n\n      // Messages\n      post.messages = options.messages\n      let results = await fetchOllama(config.endpoint, post)\n\n      // Normalize, Tools, \n      await handleResults(results, options)\n      node.warn({post, results})\n      return results\n    },\n    embed : async (options) => {\n\n    }\n}\n\nCONTEXT[config.id] = config;\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
+        "func": "\n// ------------------------------------------\n//  HELPERS\n// ------------------------------------------\n\nconst showOllama = async (url, name) => {\n  return await fetchOllama(url.replace(/chat$/, \"show\"), {name});\n}\n\nconst fetchOllama = async (url, post) => {\n  const response = await fetch(url, {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(post)\n  });\n\n  let result = await response.text();\n  if (!response.ok) { \n    node.warn({ error: `HTTP ${response.status} - ${response.statusText}`, result})\n  }\n  \n  try { result = JSON.parse(result) } catch(ex){ node.warn(ex) }\n  return result;\n}\n\nconst handleResults = async (results, options) => {\n  let finish_reason  = results.done_reason || 'stop'\n  let message = results.message\n  message.content = message.content.trim();\n\n  if (message.tool_calls){\n    finish_reason = \"tool_calls\"\n    delete message.content\n    let uid = Date.now()\n    for (let tool of message.tool_calls){\n      tool.type = \"function\"\n      tool.id = \"call_ollama_\" + (uid++);\n      //tool['function'].arguments = JSON.stringify(tool['function'].arguments);\n    }\n  }\n  /*\n  try { \n    let json = JSON.parse(message.content);\n    let fctn = json['function']\n    if (json.name && fctn) {\n      \n      message.tool_calls[{\n        \"type\"    : \"function\",\n        \"id\"      : \"call_ollama_function\",\n        \"function\":  {\n          \"name\"     : json.name,\n          \"arguments\": JSON.stringify(fctn.parameters.properties)\n        }\n      }]\n\n      delete message.content\n      finish_reason = \"tool_calls\"\n      node.warn(message)\n    }\n  } catch (ex) { node.warn(ex) }\n*/\n\n  // Follow OpenAI structure\n  results.choices = [{ finish_reason, message }]\n}\n\n// ------------------------------------------\n//  CLIENT\n// ------------------------------------------\n\nlet MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-model'] = MOONSHOTS['llm-model'] || {}\n\nlet config   = msg.llm.model\nlet metadata = await showOllama(config.endpoint, config.id);\n\nconfig.client = {\n    chat  : async (options) => {\n      let post = { \"model\": config.id, \"stream\" : options.stream }\n      if (options?.response_format?.type == 'json_object') { post.format = \"json\"; }\n\n      // Options\n      post.options = { num_ctx: 8192 } // max_context_tokens\n      if (options.temperature)       { post.options.temperature = options.temperature; }\n      //if (options.max_tokens)        { post.options.num_predict = options.max_tokens;  }\n      if (options.frequency_penalty) { post.options.repeat_penalty = options.frequency_penalty; }\n      if (options.presence_penalty)  { post.options.presence_penalty = options.presence_penalty; }\n\n      // Tools\n      if (metadata.capabilities.includes(\"tools\") && options.tools){\n        post.tools = options.tools\n      }\n\n      // Messages\n      post.messages = options.messages\n      let results = await fetchOllama(config.endpoint, post)\n\n      // Normalize, Tools, \n      await handleResults(results, options)\n      //node.warn({post, results})\n      return results\n    },\n    embed : async (options) => {\n\n    }\n}\n\nCONTEXT[config.id] = config;\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6206,19 +6246,19 @@
         "category": "Encausse.net",
         "in": [
             {
-                "x": 60,
-                "y": 80,
+                "x": 80,
+                "y": 120,
                 "wires": [
                     {
-                        "id": "1da62cbf9b2b1e3e"
+                        "id": "b40e0804f0c7a46b"
                     }
                 ]
             }
         ],
         "out": [
             {
-                "x": 840,
-                "y": 80,
+                "x": 960,
+                "y": 60,
                 "wires": [
                     {
                         "id": "e73149b17a11bdb0",
@@ -6227,15 +6267,15 @@
                 ]
             },
             {
-                "x": 400,
-                "y": 180,
+                "x": 820,
+                "y": 140,
                 "wires": [
                     {
                         "id": "073b52d82f0ef7fd",
                         "port": 1
                     },
                     {
-                        "id": "7c2c276230e382e2",
+                        "id": "b40e0804f0c7a46b",
                         "port": 1
                     }
                 ]
@@ -6375,33 +6415,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 600,
-        "y": 120,
+        "x": 640,
+        "y": 100,
         "wires": [
             [
                 "e73149b17a11bdb0"
-            ],
-            []
-        ],
-        "icon": "node-red/link-out.svg"
-    },
-    {
-        "id": "7c2c276230e382e2",
-        "type": "function",
-        "z": "5704ae21aaa902c8",
-        "name": "Variables",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-embedding'] = MOONSHOTS['llm-embedding'] || {}\n\nif (!CONTEXT.cache){\n    CONTEXT.cache = new MOONSHOTS.UTIL.LRUCache(500)\n    global.set('__MOONSHOTS__', MOONSHOTS)\n    node.warn('Building Embedding LRU Cache')\n}\n\n\nmsg.llm = msg.llm || {}\nmsg.llm.debug = msg.llm.debug || {}\n\nmsg.llm.data       = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-data\"))\nmsg.llm.dimensions = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-dim\"))\nmsg.llm.stringify  = env.get(\"env-format\");\n\nlet cache = CONTEXT.cache.get(msg.llm.data)\nif (cache != -1){\n    msg.llm.embedding = cache\n    msg.llm.debug.cache = true;\n    return node.send([undefined, msg],false);\n}\n\nreturn node.send([msg, undefined], false);",
-        "outputs": 2,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 360,
-        "y": 120,
-        "wires": [
-            [
-                "073b52d82f0ef7fd"
             ],
             []
         ],
@@ -6412,14 +6430,14 @@
         "type": "subflow:63608c8ffd25253a",
         "z": "5704ae21aaa902c8",
         "name": "Build Model",
-        "x": 190,
-        "y": 80,
+        "x": 390,
+        "y": 60,
         "wires": [
             [
                 "e73149b17a11bdb0"
             ],
             [
-                "7c2c276230e382e2"
+                "073b52d82f0ef7fd"
             ]
         ]
     },
@@ -6435,12 +6453,34 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 730,
-        "y": 80,
+        "x": 850,
+        "y": 60,
         "wires": [
             []
         ],
         "icon": "font-awesome/fa-bug"
+    },
+    {
+        "id": "b40e0804f0c7a46b",
+        "type": "function",
+        "z": "5704ae21aaa902c8",
+        "name": "Variables",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-embedding'] = MOONSHOTS['llm-embedding'] || {}\n\nif (!CONTEXT.cache){\n    CONTEXT.cache = new MOONSHOTS.UTIL.LRUCache(500)\n    global.set('__MOONSHOTS__', MOONSHOTS)\n    node.warn('Building Embedding LRU Cache')\n}\n\nlet llm_backup = msg.llm;\nif (msg.llm){\n    node.warn('msg.llm initialize will be overrided')\n    delete msg.llm;\n}\n\nmsg.llm = {}\n\nif (llm_backup){\n   msg.llm.backup = llm_backup\n}\n\n\n//msg.llm = msg.llm || {}\nmsg.llm.debug = msg.llm.debug || {}\n\nmsg.llm.data       = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-data\"))\nmsg.llm.dimensions = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-dim\"))\nmsg.llm.stringify  = env.get(\"env-format\");\n\nlet cache = CONTEXT.cache.get(msg.llm.data)\nif (cache != -1){\n    msg.llm.embedding = cache\n    msg.llm.debug.cache = true;\n    return node.send([undefined, msg],false);\n}\n\nreturn node.send([msg, undefined], false);",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 200,
+        "y": 120,
+        "wires": [
+            [
+                "1da62cbf9b2b1e3e"
+            ],
+            []
+        ],
+        "icon": "node-red/link-out.svg"
     },
     {
         "id": "8b8c4ee6a78019cd",
@@ -8593,7 +8633,7 @@
         ],
         "linkType": "static",
         "timeout": "30",
-        "x": 850,
+        "x": 870,
         "y": 200,
         "wires": [
             []
