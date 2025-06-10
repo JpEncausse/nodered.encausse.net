@@ -1,5 +1,319 @@
 [
     {
+        "id": "2030600712d9d042",
+        "type": "subflow",
+        "name": "ai:whisper",
+        "info": "",
+        "category": "Encausse.net",
+        "in": [
+            {
+                "x": 60,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "6c06417995fcb9e9"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 870,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "613e5badbf2e7a95",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 700,
+                "y": 220,
+                "wires": [
+                    {
+                        "id": "16b9426afccf9611",
+                        "port": 1
+                    }
+                ]
+            }
+        ],
+        "env": [
+            {
+                "name": "env-whisper-base64",
+                "type": "str",
+                "value": "payload.data.audio",
+                "ui": {
+                    "icon": "font-awesome/fa-file-audio-o",
+                    "label": {
+                        "en-US": "Base64*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "bin"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-whisper-buffer",
+                "type": "str",
+                "value": "payload.data.audio",
+                "ui": {
+                    "icon": "font-awesome/fa-braille",
+                    "label": {
+                        "en-US": "Buffer*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "bin"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-whisper-url",
+                "type": "str",
+                "value": "http://localhost:1881/inference",
+                "ui": {
+                    "icon": "font-awesome/fa-chain",
+                    "label": {
+                        "en-US": "URL*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-whisper-kws",
+                "type": "str",
+                "value": "sarah,jarvis",
+                "ui": {
+                    "icon": "font-awesome/fa-address-book-o",
+                    "label": {
+                        "en-US": "Keywords*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "env"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "env-whisper-duration",
+                "type": "num",
+                "value": "60000",
+                "ui": {
+                    "icon": "font-awesome/fa-clock-o",
+                    "label": {
+                        "en-US": "Conversation*"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str",
+                            "num",
+                            "env"
+                        ]
+                    }
+                }
+            }
+        ],
+        "meta": {
+            "module": "node-red-contrib-moonshots-ai",
+            "type": "moonshots-ai-whisper",
+            "version": "1.0.0",
+            "author": "Jean-Philippe Encausse <Jp@encausse.net>",
+            "keywords": "Moonshots, NodeRED, Whisper, AI",
+            "license": "MIT"
+        },
+        "color": "#9ff6fd",
+        "outputLabels": [
+            "Error",
+            ""
+        ],
+        "icon": "node-red/trigger.svg",
+        "status": {
+            "x": 840,
+            "y": 100,
+            "wires": [
+                {
+                    "id": "613e5badbf2e7a95",
+                    "port": 0
+                },
+                {
+                    "id": "87d20799bc6c84bc",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "6c06417995fcb9e9",
+        "type": "function",
+        "z": "2030600712d9d042",
+        "name": "Whisper",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\nlet whisper = msg.whisper = {}\n\n// 1. Audio Buffer\nwhisper.wavBuffer = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-whisper-buffer\"))\nwhisper.base64    = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-whisper-base64\"))\nif (whisper.base64){\n  whisper.wavBuffer = Buffer.from(whisper.base64, 'base64');\n}\n\nif (!whisper.base64 && !whisper.wavBuffer){\n  whisper.err = 'Missing Audio Buffer'\n  return [msg, undefined]\n}\n\n// 2. Setup the multipart\nconst boundary    = '--------------------------' + Date.now().toString(16);\nconst filename    = 'audio.wav';\nconst filePart = Buffer.from(\n  `--${boundary}\\r\\n` +\n  `Content-Disposition: form-data; name=\"file\"; filename=\"${filename}\"\\r\\n` +\n  `Content-Type: audio/wav\\r\\n\\r\\n`\n);\nconst closing = Buffer.from(`\\r\\n--${boundary}--\\r\\n`);\n\n// 3. Full content\nmsg.payload = whisper.payload = Buffer.concat([filePart, whisper.wavBuffer, closing]);\n\n// 4. Head \nwhisper.url = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-whisper-url\"))\nif (!whisper.url){\n  whisper.err = 'Missing Whisper Server URL'\n  return [msg, undefined]\n}\nmsg.headers = { 'Content-Type': `multipart/form-data; boundary=${boundary}` };\nmsg.url     = 'http://localhost:1881/inference';\nreturn [undefined, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 180,
+        "y": 140,
+        "wires": [
+            [
+                "613e5badbf2e7a95"
+            ],
+            [
+                "44ee2d59217c8c8e"
+            ]
+        ]
+    },
+    {
+        "id": "44ee2d59217c8c8e",
+        "type": "http request",
+        "z": "2030600712d9d042",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 350,
+        "y": 180,
+        "wires": [
+            [
+                "16b9426afccf9611"
+            ]
+        ]
+    },
+    {
+        "id": "16b9426afccf9611",
+        "type": "function",
+        "z": "2030600712d9d042",
+        "name": "Keyword Spotting",
+        "func": "\nmsg.whisper.text = msg.payload.text\nif (!msg.whisper.text) {\n    msg.whisper.err = 'No whisper text message'\n    return [msg, undefined];\n}\n\nlet MOONSHOTS = global.get('__MOONSHOTS__') || {}\nmsg.whisper.kws = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-whisper-kws\"))\nif (!msg.whisper.kws || msg.whisper.kws == \"env-whisper-kws\"){\n    return [undefined, msg];\n}\n\nif (msg._client_id === undefined) {\n    msg.whisper.err = 'Missing _client_id'\n    return [msg, undefined];\n}\nlet SOCKETS   = MOONSHOTS['web-socket'] = MOONSHOTS['web-socket'] || {}\nlet socket    = SOCKETS[msg._client_id]\n\n// Less than a minute we continue the conversation history\nmsg.whisper.duration = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-whisper-duration\")) || 60000\nif (socket.whisper && Date.now() - socket.whisper < msg.whisper.duration){\n    socket.whisper = Date.now()\n    global.set('__MOONSHOTS__', MOONSHOTS)\n    msg.whisper.err = `Follow conversation history: ${msg.whisper.text}`\n    return [undefined, msg];\n}\n\n// If sentence do NOT have KWS bypass\nlet lowercase = msg.whisper.text.toLowerCase()\nlet spot = undefined\nfor (let kw of msg.whisper.kws.split(',')){\n    if (lowercase.indexOf(kw.trim()) < 0) continue;\n    spot = kw.trim(); break;\n}\nif (!spot){\n    msg.whisper.err = `Missing keyword spotting: ${msg.whisper.text}`\n    return [msg, undefined];\n}\nmsg.whisper.err = 'Spotting: ' + spot\n\n// Perform a Reset and Continue\nmsg.whisper.err = `Buinding new conversation: ${msg.whisper.text}`\nlet { sessionId, socketID, timestamp } = socket\nsocket = SOCKETS[msg._client_id] = { sessionId, socketID, timestamp, STANDBY: {}, whisper: Date.now() }\n\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn [undefined, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 180,
+        "wires": [
+            [
+                "613e5badbf2e7a95"
+            ],
+            [
+                "87d20799bc6c84bc"
+            ]
+        ]
+    },
+    {
+        "id": "613e5badbf2e7a95",
+        "type": "change",
+        "z": "2030600712d9d042",
+        "name": "Status",
+        "rules": [
+            {
+                "t": "set",
+                "p": "fill",
+                "pt": "msg",
+                "to": "red",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "text",
+                "pt": "msg",
+                "to": "whisper.err",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 730,
+        "y": 140,
+        "wires": [
+            [
+                "3f95500a4e0207ec"
+            ]
+        ]
+    },
+    {
+        "id": "3f95500a4e0207ec",
+        "type": "debug",
+        "z": "2030600712d9d042",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "whisper.err",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "87d20799bc6c84bc",
+        "type": "change",
+        "z": "2030600712d9d042",
+        "name": "Status",
+        "rules": [
+            {
+                "t": "set",
+                "p": "fill",
+                "pt": "msg",
+                "to": "green",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "text",
+                "pt": "msg",
+                "to": "whisper.err",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 730,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
         "id": "4649143ffb637082",
         "type": "subflow",
         "name": "core:orama",
@@ -927,7 +1241,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "!function ($) {\n  $.CLIENT = $.CLIENT || {};\n  $.CLIENT.CONFIG =  $.CLIENT.CONFIG || {}\n  $.CLIENT.CONFIG.webchat = {}\n\n  // ------------------------------------------\n  //  PUBLIC\n  // ------------------------------------------\n\n  let interrupt = undefined;\n  const handleChat = $.CLIENT.handleChat = (msg) => {\n    let chat = msg.message.event.value\n    console.log(chat)\n    // Prevent multiple call, but it doesn't fix Same Ack Call\n    if (interrupt){ interrupt(); }\n\n    // Prepare callback\n    let callback = interrupt = () => {\n        interrupt = undefined;\n        //$.CLIENT.stopSpeech(); // too much ?\n\n        // Send Ack after animation\n        $.CLIENT.sendAck(msg.replyId);\n    }\n\n    // Create/Add chat bubble\n    setChatBubble(chat, () => { /* nothing  */ })\n\n    // An echo from the user\n    if (chat.from === 'user')   { return callback(); }\n    if (chat.from === 'system') { return callback(); }\n\n    // Display button advice first\n    //if (chat.buttons && chat.text){ $.CLIENT.showAdvice(chat.text)}\n\n    // Then speech\n    if (!$.CLIENT.CONFIG.webchat.tts){ return callback(); }\n    $.CLIENT.textToSpeech(chat.speech || chat.text || chat, () => {\n        return callback();\n    });\n  }\n  \n    // ------------------------------------------\n    //  PRIVATE\n    // ------------------------------------------\n\n    const addBubble = (message, callback) => {\n        let text = message\n        let type = 'chat-bubble-app'\n        let buttons = '';\n\n        if (typeof message !== 'string'){\n            text = message.text\n\n            if (marked){\n                text = marked.parse(text)\n            }\n\n            // Add Bubble User\n            if (message.from === 'user'){\n                type = 'chat-bubble-user'\n            }\n\n            // Is System message\n            if (message.from === 'system'){\n                type += ' chat-bubble-sys'\n            }\n\n            // Add Bubble Buttons\n            if (message.buttons){\n                buttons += '<div class=\"chat-bubble-btn\">'\n                for (let btn of message.buttons){\n                    buttons += '<button value=\"' + (btn.value || btn.title ) + '\">'+ btn.title +'</button>'\n                }\n                buttons += '</div>'\n            }\n        }\n\n        // Create Bubble\n        let bubble  = '<div class=\"chat-bubble ' + type + ' bounceInLeft animated\">'\n            bubble += '<div class=\"chat-bubble-content\">' + text + buttons + '</div>'\n            bubble += '</div>'\n        let $bubble = $(bubble);\n\n        // Highlight the code\n        $bubble.find('pre code').each(function(i, block) {\n            let options = { language : 'Markdown'} // default on Markdown\n            if (block.className && block.className.startsWith('language')){\n                options = { language : block.className.substring(9) }\n            }\n            let highlighted = hljs.highlight(block.textContent, options);\n            block.innerHTML = highlighted.value\n        });\n\n        // Add Bubble to Chat\n        $chat = $( \"#app-chat\" )\n        $chat.find('.chat-bubble-sys').remove();\n        $chat.append($bubble);\n\n\n        // Animate\n        if (message.from !== 'system'){\n            $chat.animate({ scrollTop: $chat.prop(\"scrollHeight\")}, 1000);\n\n            // Callback after bounce\n            setTimeout(callback, $.CLIENT.CONFIG.animate.bounce)\n            \n        } else { callback(); }\n\n        \n    }\n\n  let _handle;\n  const setChatBubble = (message, callback) => {\n\n      // Reset cleaning\n      clearTimeout(_handle);\n\n      // Clean too many bubble\n      let bubbles = $( \"#app-chat .chat-bubble\")\n      addBubble(message, callback);\n  }\n\n  // ------------------------------------------\n  //  REGISTER\n  // ------------------------------------------\n\n  const register = () => {\n    $('#chat-send').on('click', () => {\n        let message = $('#chat-message').val();\n        if (!message) return;\n        $.CLIENT.send(\"ws:chat\", message);\n        $('#chat-message').val('');\n    })\n\n    $('#chat-speech').on('click', () => {\n        let state = !$.CLIENT.CONFIG.webchat.tts\n        $.CLIENT.CONFIG.webchat.tts = state;\n        $('#chat-speech').html(state ? '🔊' : '🔇');\n\n    })\n\n    $('.chat-action').on('click', (e) => {\n        let message = $(e.target).text();\n        if (!message) return;\n        $.CLIENT.send(\"ws:chat\", message);\n    })\n\n    $.CLIENT.listenEvent('ws:chat', handleChat);\n  }\n\n  // Initialization on DOM ready\n  $(() => { register(); });\n\n}(jQuery);",
+        "template": "!function ($) {\n  $.CLIENT = $.CLIENT || {};\n  $.CLIENT.CONFIG =  $.CLIENT.CONFIG || {}\n  $.CLIENT.CONFIG.webchat = {}\n\n  // ------------------------------------------\n  //  PUBLIC\n  // ------------------------------------------\n\n  let interrupt = undefined;\n  const handleChat = $.CLIENT.handleChat = (msg) => {\n    let chat = msg.message.event.value\n    console.log(chat)\n    // Prevent multiple call, but it doesn't fix Same Ack Call\n    if (interrupt){ interrupt(); }\n\n    // Prepare callback\n    let callback = interrupt = () => {\n        interrupt = undefined;\n        //$.CLIENT.stopSpeech(); // too much ?\n\n        // Send Ack after animation\n        $.CLIENT.sendAck(msg.replyId);\n    }\n\n    // Create/Add chat bubble\n    setChatBubble(chat, () => { /* nothing  */ })\n\n    // An echo from the user\n    if (chat.from === 'user')   { return callback(); }\n    if (chat.from === 'system') { return callback(); }\n\n    // Display button advice first\n    //if (chat.buttons && chat.text){ $.CLIENT.showAdvice(chat.text)}\n\n    // Then speech\n    if (!$.CLIENT.CONFIG.webchat.tts){ return callback(); }\n    $.CLIENT.textToSpeech(chat.speech || chat.text || chat, () => {\n        return callback();\n    });\n  }\n  \n    // ------------------------------------------\n    //  PRIVATE\n    // ------------------------------------------\n\n    const addBubble = (message, callback) => {\n        let text = message\n        let type = 'chat-bubble-app'\n        let buttons = '';\n\n        if (typeof message !== 'string'){\n            text = message.text\n\n            if (marked){\n                text = marked.parse(text)\n            }\n\n            // Add Bubble User\n            if (message.from === 'user'){\n                type = 'chat-bubble-user'\n            }\n\n            // Is System message\n            if (message.from === 'system'){\n                type += ' chat-bubble-sys'\n            }\n\n            // Add Bubble Buttons\n            if (message.buttons){\n                buttons += '<div class=\"chat-bubble-btn\">'\n                for (let btn of message.buttons){\n                    buttons += '<button value=\"' + (btn.value || btn.title ) + '\">'+ btn.title +'</button>'\n                }\n                buttons += '</div>'\n            }\n        }\n\n        // Create Bubble\n        let bubble  = '<div class=\"chat-bubble ' + type + ' bounceInLeft animated\">'\n            bubble += '<div class=\"chat-bubble-content\">' + text + buttons + '</div>'\n            bubble += '</div>'\n        let $bubble = $(bubble);\n\n        // Highlight the code\n        $bubble.find('pre code').each(function(i, block) {\n            let options = { language : 'Markdown'} // default on Markdown\n            if (block.className && block.className.startsWith('language')){\n                options = { language : block.className.substring(9) }\n            }\n            let highlighted = hljs.highlight(block.textContent, options);\n            block.innerHTML = highlighted.value\n        });\n\n        // Add Bubble to Chat\n        $chat = $( \"#app-chat\" )\n        $chat.find('.chat-bubble-sys').remove();\n        $chat.append($bubble);\n\n\n        // Animate\n        if (message.from !== 'system'){\n            $chat.animate({ scrollTop: $chat.prop(\"scrollHeight\")}, 1000);\n\n            // Callback after bounce\n            setTimeout(callback, $.CLIENT.CONFIG.animate.bounce)\n            \n        } else { callback(); }\n\n        \n    }\n\n  let _handle;\n  const setChatBubble = (message, callback) => {\n\n      // Reset cleaning\n      clearTimeout(_handle);\n\n      // Clean too many bubble\n      let bubbles = $( \"#app-chat .chat-bubble\")\n      addBubble(message, callback);\n  }\n\n  // ------------------------------------------\n  //  REGISTER\n  // ------------------------------------------\n\n  const register = () => {\n    $('#chat-send').on('click', () => {\n        let message = $('#chat-message').val();\n        if (!message) return;\n        $.CLIENT.send(\"ws:chat\", message);\n        $('#chat-message').val('');\n    })\n\n    $.CLIENT.CONFIG.webchat.tts = false;\n    $('#chat-speech').on('click', () => {\n        $.CLIENT.VAD.startRecording();\n\n        let state = !$.CLIENT.CONFIG.webchat.tts\n        $.CLIENT.CONFIG.webchat.tts = state;\n        $('#chat-speech').html(state ? '🔊' : '🔇');\n    })\n\n    $('.chat-action').on('click', (e) => {\n        let message = $(e.target).text();\n        if (!message) return;\n        $.CLIENT.send(\"ws:chat\", message);\n    })\n\n    $.CLIENT.listenEvent('ws:chat', handleChat);\n  }\n\n  // Initialization on DOM ready\n  $(() => { register(); });\n\n}(jQuery);",
         "output": "str",
         "x": 710,
         "y": 120,
@@ -1053,7 +1367,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "<div class=\"app-chat-container\">\n    <div id=\"app-chat-header\">\n        {{#web.title}}<div id=\"app-chat-title\">{{{web.title}}}</div>{{/web.title}}\n        <div id=\"app-status\"></div>\n    </div>\n    <div id=\"app-chat\">\n    </div>\n    <div id=\"app-chat-footer\">\n        <textarea id=\"chat-message\" class=\"form-control\"  rows=\"3\"></textarea>\n        <div class=\"footer-btn\">\n            <button id=\"chat-speech\" class=\"btn\">🔊</button>\n            <button id=\"chat-send\" class=\"btn\">💬</button>\n        </div>\n    </div>\n</div>",
+        "template": "<div class=\"app-chat-container\">\n    <div id=\"app-chat-header\">\n        {{#web.title}}<div id=\"app-chat-title\">{{{web.title}}}</div>{{/web.title}}\n        <div id=\"app-status\"></div>\n    </div>\n    <div id=\"app-chat\">\n    </div>\n    <div id=\"app-chat-footer\">\n        <textarea id=\"chat-message\" class=\"form-control\"  rows=\"3\"></textarea>\n        <div class=\"footer-btn\">\n            <button id=\"chat-speech\" class=\"btn\">🔇</button>\n            <button id=\"chat-send\" class=\"btn\">💬</button>\n        </div>\n    </div>\n</div>",
         "output": "str",
         "x": 590,
         "y": 220,
@@ -1091,7 +1405,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "{{{web.footer.start}}}\n<script src=\"https://cdn.jsdelivr.net/npm/marked/marked.min.js\"></script>\n<script src=\"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js\"></script>\n<script src='/js/webchat.js'></script>\n\n<script>\n!function ($) {\n  // Enable TTS\n  $.CLIENT.CONFIG.webchat.tts = true;\n}(jQuery);\n</script>\n",
+        "template": "{{{web.footer.start}}}\n<script src=\"https://cdn.jsdelivr.net/npm/marked/marked.min.js\"></script>\n<script src=\"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js\"></script>\n<script src='/js/webchat.js'></script>",
         "output": "str",
         "x": 580,
         "y": 300,
@@ -2169,7 +2483,7 @@
         "type": "function",
         "z": "f36dcac84e162f71",
         "name": "Query Engine",
-        "func": "let t0 = Date.now()\nlet model = msg.llm.model\n\ntry {\n    let options    =  Object.assign({}, msg.llm.options); \n    options.stream = false\n    options.model  = ''\n    options.messages = msg.llm.chat\n    let result = await model.client.chat(options);\n    msg.llm.result = result;\n\n} catch(err){\n    console.log(err)\n    msg.llm.error = { err };\n    return node.send([msg, undefined], false);\n}\n\n// Handle result assume there is only 1\nlet choices = msg.llm.result.choices\nif (!choices || choices.length < 1){\n    msg.llm.error = { err : 'No LLM choices' }\n    return node.send([msg, undefined],false);\n}\n\nif (choices[0].finish_reason == \"length\") {\n    msg.llm.error = { err : 'Message output exceed LLM capabilities' }\n    return node.send([msg, undefined], false);\n}\n\n// Debug duration of API calls\nmsg.llm.debug.duration = (Date.now() - t0); \nreturn node.send([undefined, msg],false);",
+        "func": "let t0 = Date.now()\nlet model = msg.llm.model\n\ntry {\n    let options    =  Object.assign({}, msg.llm.options); \n    options.stream = false\n    options.model  = ''\n    options.messages = msg.llm.chat\n    let result = await model.client.chat(options);\n    msg.llm.result = result;\n} catch(err){\n    node.warn(err)\n    msg.llm.error = { err };\n    return node.send([msg, undefined], false);\n}\n\n// Handle result assume there is only 1\nlet choices = msg.llm.result.choices\nif (!choices || choices.length < 1){\n    msg.llm.error = { err : 'No LLM choices' }\n    return node.send([msg, undefined],false);\n}\n\nif (choices[0].finish_reason == \"length\") {\n    msg.llm.error = { err : 'Message output exceed LLM capabilities' }\n    return node.send([msg, undefined], false);\n}\n\n// Debug duration of API calls\nmsg.llm.debug.duration = (Date.now() - t0); \nreturn node.send([undefined, msg],false);",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -2266,7 +2580,7 @@
         "type": "function",
         "z": "f36dcac84e162f71",
         "name": "LLM : toolCalls",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\n// ------------------------------------------\n//  HELPER\n// ------------------------------------------\n\nMOONSHOTS.UTIL = MOONSHOTS.UTIL || {}\nif (!MOONSHOTS.UTIL.extractArgs) {\n    MOONSHOTS.UTIL.extractArgs = (tool) => { // Arguments can be String or Object\n        let args = tool['function'].arguments\n        if (typeof args == 'string') { \n            try { args = JSON.parse(args) } catch (ex) { }\n        }\n        return args\n    }\n    global.set('__MOONSHOTS__', MOONSHOTS)\n}\n\n// ------------------------------------------\n//  CALLBACK\n// ------------------------------------------\n\n// Store the QUERY from LLM\nlet message = msg.llm.result.choices[0].message;\nmsg.llm.toolCalls = []\nmsg.llm.toolCalls.push(message)\n\nconst sendTool = (message, idx) => {\n    // End of Loop\n    if (idx >= message.tool_calls.length){\n        return node.send([undefined, msg], false)\n    }\n\n    // Sometimes LLM provide a message along tool call to explain what it do\n    if (message.content){\n        let response = message.content\n        try { \n            response = JSON.parse(response) } \n        catch (ex) {\n            response = { text: response } // We ask for a JSON object\n        }\n        msg.llm.tool_pre_response = response\n    }\n\n    // Store the current Tool\n    msg.llm.tool = message.tool_calls[idx]\n\n    // Build callback\n    msg.llm.toolCallback = function(content, context_Id){\n        delete msg.llm.tool_pre_response // clean\n        node.warn({info: \"toolCallback\", content, context_Id, llm: msg.llm})\n        msg.llm.toolCalls.push({ \n            \"role\": \"tool\", \n            \"content\": JSON.stringify(content), \n            \"tool_call_id\": msg.llm.tool.id\n        })\n\n        // Handle Context\n        if (context_Id){\n            msg.llm.prompt.context       = msg.llm.prompt.context || {}\n            msg.llm.prompt.context.tools = msg.llm.prompt.context.tools || {} \n            if (context_Id === true) { context_Id = 'tool_' + msg.llm.tool.id + '_' + Date.now() } // Will cumulate tools results\n            msg.llm.prompt.context.tools[context_Id] = content  // Will override tools result\n        }\n\n        return sendTool(message, idx+1)\n    }\n\n    // Debug Tool\n    node.warn({debug: 'Debug Tool', tool: msg.llm.tool})\n\n    // LLM_Tool_INTERNAL_Image\n    if (msg.llm.tool['function'].name == \"LLM_Tool_INTERNAL_Image\"){\n        let tool = msg.llm.tool\n        let args = JSON.parse(tool['function'].arguments);\n        return msg.llm.toolCallback({\"LLM_Tool_INTERNAL_Image\" : args.image});\n    }\n\n    // Forward to current tool\n    return node.send([msg, undefined], false)\n}\n\n// Start the loop on tools\nreturn sendTool(message, 0)",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\n// ------------------------------------------\n//  HELPER\n// ------------------------------------------\n\nMOONSHOTS.UTIL = MOONSHOTS.UTIL || {}\nif (!MOONSHOTS.UTIL.extractArgs) {\n    MOONSHOTS.UTIL.extractArgs = (tool) => { // Arguments can be String or Object\n        let args = tool['function'].arguments\n        if (typeof args == 'string') { \n            try { args = JSON.parse(args) } catch (ex) { }\n        }\n        return args\n    }\n    global.set('__MOONSHOTS__', MOONSHOTS)\n}\n\n// ------------------------------------------\n//  CALLBACK\n// ------------------------------------------\n\n// Store the QUERY from LLM\nlet message = msg.llm.result.choices[0].message;\nmsg.llm.toolCalls = []\nmsg.llm.toolCalls.push(message)\n\nconst sendTool = (message, idx) => {\n    // End of Loop\n    if (idx >= message.tool_calls.length){\n        return node.send([undefined, msg], false)\n    }\n\n    // Sometimes LLM provide a message along tool call to explain what it do\n    if (message.content){\n        let response = message.content\n        try { \n            response = JSON.parse(response) } \n        catch (ex) {\n            response = { text: response } // We ask for a JSON object\n        }\n        msg.llm.tool_pre_response = response\n    }\n\n    // Store the current Tool\n    msg.llm.tool = message.tool_calls[idx]\n    \n    // Fix Broken Tools\n    msg.llm.tool.id   = msg.llm.tool.id   || \"call_\" + Date.now()\n    msg.llm.tool.type = msg.llm.tool.type || \"function\"\n\n\n    // Build callback\n    msg.llm.toolCallback = function(content, context_Id){\n        delete msg?.llm?.tool_pre_response\n        // node.warn({info: \"toolCallback\", content, context_Id, llm: msg.llm})\n        msg.llm.toolCalls.push({ \n            \"role\": \"tool\", \n            \"content\": JSON.stringify(content), \n            \"tool_call_id\": msg.llm.tool.id\n        })\n\n        // Handle Context\n        if (context_Id){\n            msg.llm.prompt.context       = msg.llm.prompt.context || {}\n            msg.llm.prompt.context.tools = msg.llm.prompt.context.tools || {} \n            if (context_Id === true) { context_Id = 'tool_' + msg.llm.tool.id + '_' + Date.now() } // Will cumulate tools results\n            msg.llm.prompt.context.tools[context_Id] = content  // Will override tools result\n        }\n\n        return sendTool(message, idx+1)\n    }\n\n    // Debug Tool\n    // node.warn({debug: 'Debug Tool', tool: msg.llm.tool})\n\n    // LLM_Tool_INTERNAL_Image\n    if (msg.llm.tool['function'].name == \"LLM_Tool_INTERNAL_Image\"){\n        let tool = msg.llm.tool\n        let args = JSON.parse(tool['function'].arguments);\n        return msg.llm.toolCallback({\"LLM_Tool_INTERNAL_Image\" : args.image});\n    }\n\n    // Forward to current tool\n    return node.send([msg, undefined], false)\n}\n\n// Start the loop on tools\nreturn sendTool(message, 0)",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -2288,7 +2602,7 @@
         "type": "function",
         "z": "f36dcac84e162f71",
         "name": "Initialize Prompt",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\nlet llm_backup = msg.llm;\nif (msg.llm){\n    node.warn('msg.llm initialize will be overrided')\n    delete msg.llm;\n}\n\nmsg.llm         = {}\nmsg.llm.prompt  = {} // store various prompt items\nmsg.llm.debug   = {} // store debug data\nmsg.llm.options = {} // store configuration \nmsg.llm.model   = {} // store model client\n\nif (llm_backup){\n   msg.llm.backup = llm_backup\n}\n\n// System Prompt ----------\nmsg.llm.prompt.system = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-system\"))\nif (msg.llm.prompt.system == \"env-prompt-system\"){ delete msg.llm.prompt.system }\n\n// Context Prompt ----------\nlet llm_context = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-context\"))\nif (llm_context && llm_context !== \"env-prompt-context\"){\n    // Always build an object\n    msg.llm.prompt.context = llm_context\n    if (typeof llm_context === 'string'){\n        msg.llm.prompt.context = { \"chat\": llm_context }\n    }\n\n    // There is no values\n    if (Object.keys(msg.llm.prompt.context).length === 0){\n        delete msg.llm.prompt.context\n    } else {\n        let _context = msg.llm.prompt.context\n        msg.llm.prompt.context_chat = []\n        for (let key of Object.keys(_context)){\n            msg.llm.prompt.context_chat.push({ role: \"user\", content: (\"Retrieve context of the \"+key) })\n            msg.llm.prompt.context_chat.push({ role: \"assistant\", content: JSON.stringify(_context[key]) })\n        }\n    }\n}\n\n// History Prompt ----------\nlet llm_history = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-history\"))\nif (llm_history && typeof llm_history === 'object'){\n    msg.llm.prompt.history = llm_history\n}\n\n// User Prompt ----------\nlet llm_user = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-user\"))\nif (llm_user && llm_user != \"env-prompt-user\" && typeof llm_user === 'string'){ \n    msg.llm.prompt.user = { role: \"user\", content: llm_user }\n}\n\nreturn node.send(msg,false);\n",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\nlet llm_backup = msg.llm;\nif (msg.llm){\n    node.warn('msg.llm initialize will be overrided')\n    delete msg.llm;\n}\n\nmsg.llm         = {}\nmsg.llm.prompt  = {} // store various prompt items\nmsg.llm.debug   = {} // store debug data\nmsg.llm.options = {} // store configuration \nmsg.llm.model   = {} // store model client\n\nif (llm_backup){\n   msg.llm.backup = llm_backup\n}\n\n// System Prompt ----------\nmsg.llm.prompt.system = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-system\"))\nif (msg.llm.prompt.system == \"env-prompt-system\"){ delete msg.llm.prompt.system }\n\n// Context Prompt ----------\nlet llm_context = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-context\"))\nif (llm_context && llm_context !== \"env-prompt-context\"){\n    // Always build an object\n    msg.llm.prompt.context = llm_context\n    if (typeof llm_context === 'string'){\n        msg.llm.prompt.context = { \"chat\": llm_context }\n    }\n\n    // There is no values\n    let _context = msg.llm.prompt.context\n    if (!_context || Object.keys(_context).length === 0){\n        delete msg.llm.prompt.context\n    } else {\n        msg.llm.prompt.context_chat = []\n        for (let key of Object.keys(_context)){\n            msg.llm.prompt.context_chat.push({ role: \"user\", content: (\"Retrieve context of the \"+key) })\n            msg.llm.prompt.context_chat.push({ role: \"assistant\", content: JSON.stringify(_context[key]) })\n        }\n    }\n}\n\n// History Prompt ----------\nlet llm_history = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-history\"))\nif (llm_history && typeof llm_history === 'object'){\n    msg.llm.prompt.history = llm_history\n}\n\n// User Prompt ----------\nlet llm_user = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-user\"))\nif (llm_user && llm_user != \"env-prompt-user\" && typeof llm_user === 'string'){ \n    msg.llm.prompt.user = { role: \"user\", content: llm_user }\n}\n\nreturn node.send(msg,false);\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2309,7 +2623,7 @@
         "type": "function",
         "z": "f36dcac84e162f71",
         "name": "Build Chat Flow",
-        "func": "if (typeof msg.payload !== 'object') { msg.payload = {} } // For status node\n\nlet history = msg.llm.prompt.history = msg.llm.prompt.history || []\nlet chat = msg.llm.chat = []\n\nif (msg.llm.prompt.system) {\n    let system  = \"Current date is: \" + new Date().toLocaleString('fr-FR') + \"\\n\" + msg.llm.prompt.system\n    chat.push({ role: \"system\", content: system })\n}\n\nif (msg.llm.prompt.context_chat) {\n    chat.push.apply(chat, msg.llm.prompt.context_chat);\n    // delete msg.llm.context;\n}\n\n// Push previous history messages if any\nif (msg.llm.prompt.history) {\n    chat.push.apply(chat, msg.llm.prompt.history);\n}\n\n// Append User message if any\nif (msg.llm.prompt.user) {\n    chat.push(msg.llm.prompt.user)\n    history.push(msg.llm.prompt.user)\n    delete msg.llm.prompt.user;\n}\n\n// Append Custom message if any\nif (msg.llm.prompt.custom) {\n    chat.push(msg.llm.prompt.custom);\n    delete msg.llm.prompt.custom;\n}\n\nreturn node.send(msg,false);",
+        "func": "if (typeof msg.payload !== 'object') { msg.payload = {} } // For status node\n\nlet history = msg.llm.prompt.history = msg.llm.prompt.history || []\nlet chat = msg.llm.chat = []\n\nif (msg.llm.prompt.system) {\n    let system  = \"Current date is: \" + new Date().toLocaleString('fr-FR') + \"\\n\\n\" + msg.llm.prompt.system\n    chat.push({ role: \"system\", content: system })\n}\n\nif (msg.llm.prompt.context_chat) {\n    chat.push.apply(chat, msg.llm.prompt.context_chat);\n    // delete msg.llm.context;\n}\n\n// Push previous history messages if any\nif (msg.llm.prompt.history) {\n    chat.push.apply(chat, msg.llm.prompt.history);\n}\n\n// Append User message if any\nif (msg.llm.prompt.user) {\n    chat.push(msg.llm.prompt.user)\n    history.push(msg.llm.prompt.user)\n    delete msg.llm.prompt.user;\n}\n\n// Append Custom message if any\nif (msg.llm.prompt.custom) {\n    chat.push(msg.llm.prompt.custom);\n    delete msg.llm.prompt.custom;\n}\n\nreturn node.send(msg,false);",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2352,7 +2666,7 @@
         "type": "function",
         "z": "f36dcac84e162f71",
         "name": "Build Options",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\n// Build Options\nlet options = msg.llm.options = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-options\")) || {}\n\nif (!options.temperature)       options.temperature = 0.7\nif (!options.top_p)             options.top_p = 0.9\nif (!options.frequency_penalty) options.frequency_penalty = 0\nif (!options.presence_penalty)  options.presence_penalty = 0\nif (!options.max_tokens)        options.max_tokens = 4000\n\n\n// Declare LLM Tools Array ----------\nlet llm_tools = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-tools\"))\nif (llm_tools){\n    options.tools = llm_tools\n}\n\n// Add Image URL Tool Hack ----------\n// Will trigger an internal tool to handle multimodal content by URL directly\nlet isMultiModal = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-multimodal\"))\nif (isMultiModal && isMultiModal == \"true\"){\n    options.tools = options.tools || []\n    options.tools.push({\n        \"type\": \"function\",\n        \"function\": {\n            name: \"LLM_Tool_INTERNAL_Image\",\n            description: \"You are Multimodal and can understand Image URL\",\n            parameters: {\n                type: \"object\",\n                properties: {\n                    image: {\n                        type: \"string\",\n                        description: \"The image url\",\n                    },\n                },\n                required: [\"image\"],\n            },\n        }\n    })\n}\n\n\n// Handle JSON format\n// Require a compatible model AND JSON in the prompt\nlet llm_format = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-options-format\"))\nif (llm_format == \"json\"){\n    options.response_format = { \"type\": \"json_object\" }\n}\n\nreturn node.send(msg, false);",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\n// Build Options\nlet options = msg.llm.options = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-options\")) || {}\n\nif (!options.temperature)       options.temperature = 0.7\nif (!options.top_p)             options.top_p = 0.9\nif (!options.frequency_penalty) options.frequency_penalty = 0\nif (!options.presence_penalty)  options.presence_penalty = 0\nif (!options.max_tokens)        options.max_tokens = 4000\n// See tool_choice in OAI documentation\n\n// Declare LLM Tools Array ----------\nlet llm_tools = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-tools\"))\nif (llm_tools && Array.isArray(llm_tools)){\n    options.tools = llm_tools\n}\n\n// Add Image URL Tool Hack ----------\n// Will trigger an internal tool to handle multimodal content by URL directly\nlet isMultiModal = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-multimodal\"))\nif (isMultiModal && isMultiModal == \"true\"){\n    options.tools = options.tools || []\n    options.tools.push({\n        \"type\": \"function\",\n        \"function\": {\n            name: \"LLM_Tool_INTERNAL_Image\",\n            description: \"You are Multimodal and can understand Image URL\",\n            parameters: {\n                type: \"object\",\n                properties: {\n                    image: {\n                        type: \"string\",\n                        description: \"The image url\",\n                    },\n                },\n                required: [\"image\"],\n            },\n        }\n    })\n}\n\n\n// Handle JSON format\n// Require a compatible model AND JSON in the prompt\nlet llm_format = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-options-format\"))\nif (llm_format == \"json\"){\n    options.response_format = { \"type\": \"json_object\" }\n}\n\nreturn node.send(msg, false);",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2394,7 +2708,7 @@
         "type": "function",
         "z": "f36dcac84e162f71",
         "name": "Build Response",
-        "func": "let result   = msg.llm.result;\nlet choices  = msg.llm.result.choices\nlet response = choices[0].message.content\n\n// Initialize history juste in case\nmsg.llm.prompt.history = msg.llm.prompt.history || []\n\n// Push + Backup + Exit\nlet options = msg.llm.options\nif (!options.response_format || options.response_format.type != \"json_object\") {\n    msg.llm.prompt.history.push({ role: \"assistant\", content: response })\n    msg.llm.response = response\n    return node.send(msg, false);\n}\n\n// Should never be called with format\nif (response.startsWith('```json')) {\n    response = response.substring(7, response.length - 3).trim()\n}\n\n// Try to parse JSON responses\ntry {\n    response = JSON.parse(response)\n} catch (ex) {\n    msg.llm.error = { err: 'JSON Parsing error', response, ex }\n    response = { text: response } // We ask for a JSON object\n}\n\n// By design we store the text response in text variable\nmsg.llm.prompt.history.push({ role: \"assistant\", content: response.text }) \nmsg.llm.response = response\n\nreturn node.send(msg,false);",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet result   = msg.llm.result;\nlet choices  = msg.llm.result.choices\nlet response = choices[0].message.content\n\n// Initialize history juste in case\nmsg.llm.prompt.history = msg.llm.prompt.history || []\n\n// Push + Backup + Exit\nlet options = msg.llm.options\nif (!options.response_format || options.response_format.type != \"json_object\") {\n    msg.llm.prompt.history.push({ role: \"assistant\", content: response })\n    msg.llm.response = response\n    return node.send(msg, false);\n}\n\n// Strong parse JSON\nlet parsing = MOONSHOTS.UTIL.parseJSON(response)\nresponse = parsing.json || { text: parsing.value } // We ask for a JSON object\n\n// By design we store the text response in text variable\nmsg.llm.prompt.history.push({ role: \"assistant\", content: response.text }) \nmsg.llm.response = response\n\nreturn node.send(msg,false);",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2452,7 +2766,7 @@
         "type": "function",
         "z": "f36dcac84e162f71",
         "name": "Partial Response",
-        "func": "let result   = msg.llm.result;\nlet choices  = msg.llm.result.choices\nlet response = choices[0].delta.content\n\nconst pushToHistory = (content, override) => {\n    let history = msg.llm.prompt.history = msg.llm.prompt.history || []\n    if (history.length == 0) { return history.push({ role: \"assistant\", content: content }) }\n    \n    let lastHist = history[history.length - 1] // First time we answer\n    if (lastHist.role !== \"assistant\") { return history.push({ role: \"assistant\", content: content }) }\n\n    // Cumulative answer for streaming unless it's JSON's text\n    lastHist.content = override ? content : (lastHist.content + content) \n}\n\n// Push + Backup + Exit\nlet options = msg.llm.options\nif (!options.response_format || options.response_format.type != \"json_object\") {\n    pushToHistory(response)\n    msg.llm.response = response\n    return node.send(msg, false);\n}\n\n// ------------------------------------------\n//  JSON Part\n// ------------------------------------------\n\n// We are working on full response not just the delta\nresponse = msg.llm.stream.content\n\n// Should never be called with format\nif (response.startsWith('```json')) {\n    response = response.substring(7, response.length - 3).trim()\n}\n\n// Try to parse JSON responses\nlet repaired = \"\"; let parsed   = \"\";\ntry {\n    msg.llm.response = response;\n    if (!response || response.trim() == \"\"){ return; } // Stop here\n    let temp = response.endsWith('}') ? response : response + '\"'\n    repaired = JSONRepair.jsonrepair(temp)\n    parsed   = JSON.parse(repaired)\n    \n    // By design we store the text response in text variable.\n    // We override the last assistant instead of concatenate because it's JSON\n    // It could be a side effect id a tool has been called in between\n    if (parsed.text){\n        pushToHistory(parsed.text, true)\n    }\n    msg.llm.response = parsed\n\n} catch (ex) {\n    \n    msg.llm.error = { err: 'JSON Parsing error', response, repaired, parsed, ex }\n    node.warn(msg.llm.error)\n    response = { text: response } // We ask for a JSON object\n}\n\nreturn node.send(msg,false);",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet result    = msg.llm.result;\nlet choices   = msg.llm.result.choices\nlet response  = choices[0].delta.content\n\nconst pushToHistory = (content, override) => {\n    let history = msg.llm.prompt.history = msg.llm.prompt.history || []\n    if (history.length == 0) { return history.push({ role: \"assistant\", content: content }) }\n    \n    let lastHist = history[history.length - 1] // First time we answer\n    if (lastHist.role !== \"assistant\") { return history.push({ role: \"assistant\", content: content }) }\n\n    // Cumulative answer for streaming unless it's JSON's text\n    lastHist.content = override ? content : (lastHist.content + content) \n}\n\n// Push + Backup + Exit\nlet options = msg.llm.options\nif (!options.response_format || options.response_format.type != \"json_object\") {\n    pushToHistory(response)\n    msg.llm.response = response\n    return node.send(msg, false);\n}\n\n// ------------------------------------------\n//  JSON Part\n// ------------------------------------------\n\n// We are working on full response not just the delta\nresponse = msg.llm.stream.content\n\nlet parsing = MOONSHOTS.UTIL.parseJSON(response, true)\nresponse = parsing.json || { text: parsing.value } // We ask for a JSON object\nif (parsing.err){ node.warn(parsing) }\n\n// By design we store the text response in text variable.\n// We override the last assistant instead of concatenate because it's JSON\n// It could be a side effect id a tool has been called in between\nif (parsing.json?.text){ pushToHistory(parsing.json?.text, true) }\n\nreturn node.send(msg,false);",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3300,7 +3614,7 @@
         "type": "function",
         "z": "681160babea0f830",
         "name": "LLM Retrieve Context",
-        "func": "if (!msg._client_id) { node.warn('Missing _client_id'); return msg; }\n\nlet MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet SOCKETS = MOONSHOTS['web-socket'] = MOONSHOTS['web-socket'] || {}\n\nlet socket = SOCKETS[msg._client_id]\nif (socket === undefined) { node.warn('No socket available'); return msg; }\n\nsocket.chat = socket.chat || {}\n\n\nmsg.cfg     = msg.cfg     || {}\nmsg.cfg.llm = msg.cfg.llm || {}\nmsg.cfg.llm.context = socket.chat.context || {}\n\n\n// Merge with caller\nlet llm_context = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-context\"))\nif (llm_context && (typeof llm_context === 'string') ){\n    msg.cfg.llm.context[\"chat\"] = llm_context\n}\nreturn msg;",
+        "func": "if (!msg._client_id) { node.warn('Missing _client_id'); return msg; }\n\nlet MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet SOCKETS = MOONSHOTS['web-socket'] = MOONSHOTS['web-socket'] || {}\n\nlet socket = SOCKETS[msg._client_id]\nif (socket === undefined) { node.warn('No socket available'); return msg; }\n\nsocket.chat = socket.chat || {}\n\n\nmsg.cfg     = msg.cfg     || {}\nmsg.cfg.llm = msg.cfg.llm || {}\nmsg.cfg.llm.context = socket.chat.context || {}\n\n\n// Merge with caller\nlet llm_context = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-context\"))\nif (llm_context && (typeof llm_context === 'string')){\n    msg.cfg.llm.context[\"chat\"] = llm_context\n}\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -4822,7 +5136,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "\n<!-- FOOTER  -->\n    <script src=\"https://code.jquery.com/jquery-3.6.0.min.js\" integrity=\"sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=\" crossorigin=\"anonymous\"></script>\n    <script src=\"https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js\" integrity=\"sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>\n    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js\" integrity=\"sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj\" crossorigin=\"anonymous\"></script>\n    <script src=\"https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js\"></script>\n    \n    <!-- VAD -->\n    <script src=\"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js\"></script>\n    <script src=\"https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@latest/dist/bundle.min.js\"></script>\n\n    <script src='/js/app.js'></script>\n    <script src='/js/status.js'></script>\n    <script src='/js/ajax.js'></script>\n    <script src='/js/tts.js'></script>\n    <script src='/js/stt.js'></script>\n\n{{#web.ws.url}}\n    <script src='/js/websocket.js'></script>\n    <script>\n        !function ($) {\n            $(() => { $.CLIENT.connect('{{{web.ws.url}}}', {hint : '{{{web.ws.hint}}}', cookie: {{{web.ws.cookie}}}  }); });\n        }(jQuery);\n    </script>\n{{/web.ws.url}}",
+        "template": "\n<!-- FOOTER  -->\n\n    <!-- VAD -->\n    <script src=\"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js\"></script>\n    <script src=\"https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@latest/dist/bundle.min.js\"></script>\n\n    <!-- UTILS -->\n    <script src=\"https://code.jquery.com/jquery-3.6.0.min.js\" integrity=\"sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=\" crossorigin=\"anonymous\"></script>\n    <script src=\"https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js\" integrity=\"sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>\n    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js\" integrity=\"sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj\" crossorigin=\"anonymous\"></script>\n    <script src=\"https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js\"></script>\n    \n    <!-- APP -->\n    <script src='/js/app.js'></script>\n    <script src='/js/status.js'></script>\n    <script src='/js/ajax.js'></script>\n    <script src='/js/tts.js'></script>\n    <script src='/js/stt.js'></script>\n\n{{#web.ws.url}}\n    <script src='/js/websocket.js'></script>\n    <script>\n        !function ($) {\n            $(() => { $.CLIENT.connect('{{{web.ws.url}}}', {hint : '{{{web.ws.hint}}}', cookie: {{{web.ws.cookie}}}  }); });\n        }(jQuery);\n    </script>\n{{/web.ws.url}}",
         "output": "str",
         "x": 540,
         "y": 520,
@@ -5073,7 +5387,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "!function ($) {\n\n    $.CLIENT = $.CLIENT || {};\n    $.CLIENT.CONFIG =  $.CLIENT.CONFIG || {}\n    $.CLIENT.VAD =  $.CLIENT.VAD || {}\n\n    // ------------------------------------------\n    //  PUBLIC\n    // ------------------------------------------\n\n    const startRecording = $.CLIENT.VAD.startRecording = async () => {\n      if (!$.CLIENT.VAD.vadInstance) await initVAD();\n      await $.CLIENT.VAD.vadInstance.start();\n       $.CLIENT.status($.CLIENT.STATUS.MICROPHONE, 'Start Recording ...');\n    };\n\n    const stopRecording = $.CLIENT.VAD.stopRecording = async () => {\n      if ($.CLIENT.VAD.vadInstance) {\n        await $.CLIENT.VAD.vadInstance.pause();\n        $.CLIENT.status($.CLIENT.STATUS.MICROPHONE, 'Stop Recording ...');\n      }\n    };\n\n    // ------------------------------------------\n    //  PRIVATE\n    // ------------------------------------------\n\n    $.CLIENT.VAD.debugAudio = async (base64, query) => {\n      const audioUrl  = `data:audio/wav;base64,${base64}`\n      const audio = document.createElement(\"audio\")\n      audio.controls = true\n      audio.src = audioUrl\n      $(query).empty().append(audio);\n    }\n\n    $.CLIENT.VAD.sendAudio = async (base64, type) => {\n      type = type || \"ws:audio\"\n      $.CLIENT.send(type, { type: \"audio\",  timestamp: Date.now(), audio: base64 }, false);    \n    }\n\n    const initVAD = async () => {\n      $.CLIENT.VAD.vadInstance = await vad.MicVAD.new({\n        model: \"v5\",\n        positiveSpeechThreshold: 0.4,\n        negativeSpeechThreshold: 0.4,\n        minSpeechFrames: 15,\n        preSpeechPadFrames: 30,\n        onFrameProcessed: (probs, frame) => { if (probs.notSpeech > 0.4) return;  }, // Use for SFX\n        onSpeechEnd: (arr) => {\n          const wavBuffer = vad.utils.encodeWAV(arr)\n          const base64    = vad.utils.arrayBufferToBase64(wavBuffer)\n          $.CLIENT.VAD.debugAudio(base64, '#audio-output')\n          $.CLIENT.VAD.sendAudio(base64, 'ws:audio:vad')\n        }\n      });\n    }\n    \n    // ------------------------------------------\n    //  REGISTER\n    // ------------------------------------------\n\n    const register = () => {\n      $.CLIENT.listenEvent('tts:audio:start', stopRecording)\n      $.CLIENT.listenEvent('tts:audio:end',  () => { \n        if ($.CLIENT.VAD.vadInstance) startRecording() \n      })\n    }\n\n    // Initialization on DOM ready\n    $(() => { register(); });\n\n  }(jQuery);",
+        "template": "!function ($) {\n\n    $.CLIENT = $.CLIENT || {};\n    $.CLIENT.CONFIG =  $.CLIENT.CONFIG || {}\n    $.CLIENT.VAD =  $.CLIENT.VAD || {}\n\n    // ------------------------------------------\n    //  PUBLIC\n    // ------------------------------------------\n\n    const startRecording = $.CLIENT.VAD.startRecording = async () => {\n      if (!$.CLIENT.VAD.vadInstance) await initVAD();\n      await $.CLIENT.VAD.vadInstance.start();\n      $.CLIENT.status($.CLIENT.STATUS.MICROPHONE, 'Start Recording ...');\n    };\n\n    const stopRecording = $.CLIENT.VAD.stopRecording = async () => {\n      if ($.CLIENT.VAD.vadInstance) {\n        await $.CLIENT.VAD.vadInstance.pause();\n        $.CLIENT.status($.CLIENT.STATUS.MICROPHONE, 'Stop Recording ...');\n      }\n    };\n\n    // ------------------------------------------\n    //  PRIVATE\n    // ------------------------------------------\n\n    $.CLIENT.VAD.debugAudio = async (base64, query) => {\n      const audioUrl  = `data:audio/wav;base64,${base64}`\n      const audio = document.createElement(\"audio\")\n      audio.controls = true\n      audio.src = audioUrl\n      $(query).empty().append(audio);\n    }\n\n    $.CLIENT.VAD.sendAudio = async (base64, type) => {\n      type = type || \"ws:audio\"\n      $.CLIENT.send(type, { type: \"audio\",  timestamp: Date.now(), audio: base64 }, false);    \n    }\n\n    const initVAD = async () => {\n      $.CLIENT.VAD.vadInstance = await vad.MicVAD.new({\n        model: \"v5\",\n        positiveSpeechThreshold: 0.4,\n        negativeSpeechThreshold: 0.4,\n        minSpeechFrames: 15,\n        preSpeechPadFrames: 30,\n        onFrameProcessed: (probs, frame) => { if (probs.notSpeech > 0.4) return;  }, // Use for SFX\n        onSpeechEnd: (arr) => {\n          const wavBuffer = vad.utils.encodeWAV(arr)\n          const base64    = vad.utils.arrayBufferToBase64(wavBuffer)\n          $.CLIENT.VAD.debugAudio(base64, '#audio-output')\n          $.CLIENT.VAD.sendAudio(base64, 'ws:audio:vad')\n        }\n      });\n    }\n    \n    // ------------------------------------------\n    //  REGISTER\n    // ------------------------------------------\n\n    const register = () => {\n      $.CLIENT.listenEvent('tts:audio:start', stopRecording)\n      $.CLIENT.listenEvent('tts:audio:end',  () => { \n        if ($.CLIENT.VAD.vadInstance) startRecording() \n      })\n    }\n\n    // Initialization on DOM ready\n    $(() => { register(); });\n\n  }(jQuery);",
         "output": "str",
         "x": 750,
         "y": 320,
@@ -5102,8 +5416,8 @@
         ],
         "out": [
             {
-                "x": 360,
-                "y": 140,
+                "x": 380,
+                "y": 180,
                 "wires": [
                     {
                         "id": "22f64f94bd5524b8",
@@ -5177,7 +5491,7 @@
         "finalize": "",
         "libs": [],
         "x": 250,
-        "y": 140,
+        "y": 180,
         "wires": [
             []
         ]
@@ -5196,6 +5510,31 @@
         "libs": [],
         "x": 240,
         "y": 100,
+        "wires": [
+            [
+                "63d5ccdfc8ba5a8f"
+            ]
+        ]
+    },
+    {
+        "id": "63d5ccdfc8ba5a8f",
+        "type": "function",
+        "z": "b9a304504e87d0dd",
+        "name": "parseJSON()",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\n\nconst unflattenObject = (flatObj) => {\n    const result = {};\n    Object.keys(flatObj).forEach(fullKey => {\n        const val   = flatObj[fullKey];\n        const parts = fullKey.split(\".\");\n\n        let cursor = result;\n        parts.forEach((segment, idx) => {\n            if (idx === parts.length - 1) {\n                cursor[segment] = val;\n            } else {\n                if (!Object.prototype.hasOwnProperty.call(cursor, segment) || typeof cursor[segment] !== \"object\") {\n                    cursor[segment] = {};\n                }\n                cursor = cursor[segment];\n            }\n        });\n    });\n    return result;\n}\n\nMOONSHOTS.UTIL = MOONSHOTS.UTIL || {}\nMOONSHOTS.UTIL.parseJSON = (value, repair) => {\n    if (value === undefined) { \n        return { value, err : \"parseJSON() : undefined String\" }; \n    }\n\n    if (typeof value !== \"string\"){\n        return { value, err : \"parseJSON() : not a String\" }; \n    }\n\n    // 1. Trim the String\n    value = value.trim()\n\n    // 2. Remove Markdown markup\n    if (value.startsWith('```json')) {\n        value = value.substring(7, value.length - 3).trim()\n    }\n\n    // 3. Try to repair the JSON\n    if (repair){\n        value = value.endsWith('}') ? value : value + '\"'\n        value = JSONRepair.jsonrepair(value)\n    }\n\n    // 4. Try to parse the JSON\n    let json = undefined\n    try { json = JSON.parse(value) } catch (ex) { return { value, err : \"Parsing Error\", ex }}\n\n    // 5. Unflatten the JSON\n    json = unflattenObject(json)\n    return { value, json };\n}\n\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "JSONRepair",
+                "module": "jsonrepair"
+            }
+        ],
+        "x": 230,
+        "y": 140,
         "wires": [
             [
                 "22f64f94bd5524b8"
@@ -6173,17 +6512,25 @@
                 "vt": "str"
             },
             {
+                "t": "eq",
+                "v": "FOUNDRY",
+                "vt": "str"
+            },
+            {
                 "t": "else"
             }
         ],
         "checkall": "false",
         "repair": false,
-        "outputs": 2,
+        "outputs": 3,
         "x": 430,
-        "y": 220,
+        "y": 240,
         "wires": [
             [
                 "05a19c7b3f35e11d"
+            ],
+            [
+                "e12fb8c39038949d"
             ],
             [
                 "b88086bd3214a77d"
@@ -6195,7 +6542,7 @@
         "type": "function",
         "z": "63608c8ffd25253a",
         "name": "OLLAMA",
-        "func": "\n// ------------------------------------------\n//  HELPERS\n// ------------------------------------------\n\nconst showOllama = async (url, name) => {\n  return await fetchOllama(url.replace(/chat$/, \"show\"), {name});\n}\n\nconst fetchOllama = async (url, post) => {\n  const response = await fetch(url, {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(post)\n  });\n\n  let result = await response.text();\n  if (!response.ok) { \n    node.warn({ error: `HTTP ${response.status} - ${response.statusText}`, result, url, post})\n  }\n  \n  try { result = JSON.parse(result) } catch(ex){ node.warn(ex) }\n  return result;\n}\n\nconst handleResults = async (results, options) => {\n  let finish_reason  = results.done_reason || 'stop'\n  let message = results.message\n  message.content = message.content.trim();\n\n  // We try to parse the in case of tool_calls\n  try { \n    let ollahack = JSON.parse(message.content); \n    if (ollahack.tool_calls){\n      message.tool_calls = ollahack.tool_calls\n      delete ollahack.tool_calls\n      message.content = JSON.stringify(ollahack)\n      finish_reason = 'tool_calls'\n    }\n  } catch(ex){ }\n\n  // Follow OpenAI structure\n  results.choices = [{ finish_reason, message }]\n}\n\n// ------------------------------------------\n//  CLIENT\n// ------------------------------------------\n\nlet MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-model'] = MOONSHOTS['llm-model'] || {}\n\nlet config   = msg.llm.model\nlet metadata = await showOllama(config.endpoint, config.id);\n\nconfig.client = {\n    chat  : async (options) => {\n      let post = { \"model\": config.id, \"stream\" : options.stream }\n      if (options?.response_format?.type == 'json_object') { post.format = \"json\"; }\n\n      // Options\n      post.num_ctx = 8192\n      if (options.temperature)       { post.temperature = options.temperature; }\n      if (options.max_tokens)        { post.num_predict = options.max_tokens;  }\n      if (options.frequency_penalty) { post.frequency_penalty = options.frequency_penalty; }\n      if (options.presence_penalty)  { post.presence_penalty  = options.presence_penalty; }\n      // repeat_penalty custom ollama\n\n      // Tools\n      if (metadata.capabilities.includes(\"tools\") && options.tools){\n        post.tools = options.tools\n      }\n\n      // Messages\n      post.messages = options.messages\n      let results = await fetchOllama(config.endpoint, post)\n      //node.warn({post, results})\n\n      // Normalize, Tools, \n      await handleResults(results, options)\n      \n      return results\n    },\n    embed : async (options) => {\n      if (!config.id){ return node.warn('Missing Model ID') }\n      let post = { \"model\" : config.id, \"prompt\": options.input }\n      let resp = await fetchOllama(config.endpoint, post)\n      let results = { \"data\" : [{\"object\": \"embedding\", \"index\": 0, \"embedding\": resp.embedding, \"model\": post.model }]}\n      //node.warn(results)\n      return results\n    }\n}\n\nCONTEXT[config.id] = config;\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-model'] = MOONSHOTS['llm-model'] || {}\n\n// ------------------------------------------\n//  HELPERS\n// ------------------------------------------\n\nconst showOllama = async (url, name) => {\n  return await fetchOllama(url.replace(/chat$/, \"show\"), {name});\n}\n\nconst fetchOllama = async (url, post) => { \n  const controller = new AbortController();\n  const timeout    = setTimeout(() => controller.abort(), 20000);\n  const response   = await fetch(url, {\n    signal: controller.signal,\n    method: 'POST', headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(post)\n  });\n  clearTimeout(timeout);\n\n  let result = await response.text();\n  if (!response.ok) { \n    node.warn({ error: `HTTP ${response.status} - ${response.statusText}`, result, url, post})\n  }\n  \n  try { result = JSON.parse(result) } catch(ex){ node.warn(ex) }\n  return result;\n}\n\nconst handleResults = async (results, options) => {\n  \n  let message = results.message\n  if (!message) return;\n\n  let finish_reason  = results.done_reason || 'stop'\n  if (message.tool_calls){ finish_reason = 'tool_calls' }\n\n  // We try to parse the in case of tool_calls\n  let parsing = MOONSHOTS.UTIL.parseJSON(message.content)\n  message.content = parsing.value\n\n  // It could contains tool_calls to retrieve and set\n  if (parsing.json?.tool_calls){\n    message.tool_calls = parsing.json.tool_calls\n    message.tool_calls.forEach(d => d.function.arguments = JSON.stringify(d.function.arguments));\n    finish_reason = 'tool_calls'\n    delete parsing.json.tool_calls\n  }\n\n  // Anyway if we have JSON we stringify it back\n  if (parsing.json){\n    message.content = JSON.stringify(parsing.json)\n  }\n\n  // Follow OpenAI structure\n  results.choices = [{ finish_reason, message }]\n}\n\n// ------------------------------------------\n//  CLIENT\n// ------------------------------------------\n\nlet config   = msg.llm.model\nlet metadata = await showOllama(config.endpoint, config.id);\n\nconfig.client = {\n    chat  : async (options) => {\n      let post = { \"model\": config.id, \"stream\" : options.stream }\n      if (options?.response_format?.type == 'json_object') { post.format = \"json\"; }\n\n      // Options\n      post.num_ctx = 8192\n      if (options.temperature)       { post.temperature = options.temperature; }\n      if (options.max_tokens)        { post.num_predict = options.max_tokens;  }\n      if (options.frequency_penalty) { post.frequency_penalty = options.frequency_penalty; }\n      if (options.presence_penalty)  { post.presence_penalty  = options.presence_penalty; }\n      // repeat_penalty custom ollama\n\n      // Tools\n      if (metadata.capabilities.includes(\"tools\") && options.tools){\n        post.tools = options.tools\n      }\n\n      // Messages\n      post.messages = options.messages\n      let results = await fetchOllama(config.endpoint, post)\n      node.warn({post, results})\n\n      // Normalize, Tools, \n      await handleResults(results, options)\n      \n      return results\n    },\n    embed : async (options) => {\n      if (!config.id){ return node.warn('Missing Model ID') }\n      let post = { \"model\" : config.id, \"prompt\": options.input }\n      let resp = await fetchOllama(config.endpoint, post)\n      let results = { \"data\" : [{\"object\": \"embedding\", \"index\": 0, \"embedding\": resp.embedding, \"model\": post.model }]}\n      //node.warn(results)\n      return results\n    }\n}\n\nCONTEXT[config.id] = config;\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6205,6 +6552,10 @@
             {
                 "var": "fetch",
                 "module": "node-fetch"
+            },
+            {
+                "var": "AbortController",
+                "module": "abort-controller"
             }
         ],
         "x": 580,
@@ -6234,7 +6585,7 @@
             }
         ],
         "x": 580,
-        "y": 240,
+        "y": 280,
         "wires": [
             [
                 "0535485087b7f606"
@@ -6259,6 +6610,36 @@
         "wires": [
             [],
             []
+        ],
+        "icon": "node-red/link-out.svg"
+    },
+    {
+        "id": "e12fb8c39038949d",
+        "type": "function",
+        "z": "63608c8ffd25253a",
+        "name": "FOUNDRY",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-model'] = MOONSHOTS['llm-model'] || {}\n\n// ------------------------------------------\n//  HELPERS\n// ------------------------------------------\n\n//const showFoundry = async (url, name) => {\n//  return await fetchFoundry(url.replace(/chat$/, \"show\"), {name});\n//}\n\nconst fetchFoundry = async (url, post) => { node.warn(post);\n\n  const controller = new AbortController();\n  const timeout    = setTimeout(() => controller.abort(), 20000);\n  const response = await fetch(url, {\n    signal: controller.signal,\n    method: 'POST', headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(post)\n  });\n  clearTimeout(timeout);\n  let result = await response.text();\n  if (!response.ok) { \n    node.warn({ error: `HTTP ${response.status} - ${response.statusText}`, result, url, post})\n  }\n  \n  try { result = JSON.parse(result) } catch(ex){ node.warn(ex) }\n  return result;\n}\n\nconst handleResults = async (results, options) => {\n  if (!results.choices){ return; }\n\n  let choice  = results.choices[0]\n  let message = choice.message\n\n  if (message.tool_calls && message.tool_calls.length > 0){ choice.finish_reason = 'tool_calls' }\n\n  // We try to parse the in case of tool_calls\n  let parsing = MOONSHOTS.UTIL.parseJSON(message.content)\n  message.content = parsing.value\n\n  // It could contains tool_calls to retrieve and set\n  if (parsing.json?.tool_calls && parsing.json?.tool_calls.length > 0){\n    message.tool_calls = parsing.json.tool_calls\n    message.tool_calls.forEach(d => d.function.arguments = JSON.stringify(d.function.arguments));\n    choice.finish_reason = 'tool_calls'\n    delete parsing.json.tool_calls\n  }\n\n  // Anyway if we have JSON we stringify it back\n  if (parsing.json){\n    message.content = JSON.stringify(parsing.json)\n  }\n}\n\n// ------------------------------------------\n//  CLIENT\n// ------------------------------------------\n\nlet config   = msg.llm.model\n// let metadata = await fetchFoundry(config.endpoint, config.id);\n\nconfig.client = {\n    chat  : async (options) => {\n      let post = { \"model\": config.id, \"stream\" : options.stream }\n\n      // Inject limited set of options\n      const { response_format, temperature, max_tokens, presence_penalty } = options; // frequency_penalty\n      Object.assign(post, { response_format, temperature, max_tokens, presence_penalty });\n\n      // Tools\n      if (options.tools) { // metadata.capabilities.includes(\"tools\") && \n        post.tools  = options.tools\n        //post.functions = options.tools\n      }\n\n      // Messages\n      post.messages = options.messages\n      let results = await fetchFoundry(config.endpoint, post)\n      node.warn({debug: 'before', post, results})\n\n      // Normalize, Tools, \n      await handleResults(results, options)\n      node.warn({debug: 'after', post, results})\n\n      return results\n    },\n    embed : async (options) => {\n      if (!config.id){ return node.warn('Missing Model ID') }\n      let post = { \"model\" : config.id, \"prompt\": options.input }\n      let resp = await fetchFoundry(config.endpoint, post)\n      let results = { \"data\" : [{\"object\": \"embedding\", \"index\": 0, \"embedding\": resp.embedding, \"model\": post.model }]}\n      //node.warn(results)\n      return results\n    }\n}\n\nCONTEXT[config.id] = config;\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "fetch",
+                "module": "node-fetch"
+            },
+            {
+                "var": "abortController",
+                "module": "abort-controller"
+            }
+        ],
+        "x": 590,
+        "y": 240,
+        "wires": [
+            [
+                "0535485087b7f606"
+            ]
         ],
         "icon": "node-red/link-out.svg"
     },
@@ -8721,7 +9102,7 @@
         "type": "subflow:8b8c4ee6a78019cd",
         "z": "9e8b73edc41ce386",
         "name": "",
-        "x": 560,
+        "x": 140,
         "y": 320,
         "wires": [
             [],
@@ -8780,7 +9161,7 @@
         "type": "subflow:ed6749f4e72bfce1",
         "z": "9e8b73edc41ce386",
         "name": "",
-        "x": 570,
+        "x": 150,
         "y": 360,
         "wires": [
             []
@@ -8898,7 +9279,7 @@
         "type": "subflow:23c4be2d8e257059",
         "z": "9e8b73edc41ce386",
         "name": "",
-        "x": 560,
+        "x": 140,
         "y": 400,
         "wires": [
             []
@@ -8909,8 +9290,8 @@
         "type": "subflow:8e0f26963e23e657",
         "z": "9e8b73edc41ce386",
         "name": "",
-        "x": 670,
-        "y": 260,
+        "x": 550,
+        "y": 300,
         "wires": [
             [],
             []
@@ -8940,6 +9321,18 @@
         ],
         "x": 570,
         "y": 120,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "6cf5ed10f039fe07",
+        "type": "subflow:2030600712d9d042",
+        "z": "9e8b73edc41ce386",
+        "name": "",
+        "x": 560,
+        "y": 340,
         "wires": [
             [],
             []
