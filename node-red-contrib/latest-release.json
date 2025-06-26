@@ -2374,28 +2374,18 @@
             },
             {
                 "name": "env-options-format",
-                "type": "str",
-                "value": "",
+                "type": "env",
+                "value": "env-options-format",
                 "ui": {
                     "icon": "font-awesome/fa-code",
                     "label": {
                         "en-US": "Format"
                     },
-                    "type": "select",
+                    "type": "input",
                     "opts": {
-                        "opts": [
-                            {
-                                "l": {
-                                    "en-US": "String"
-                                },
-                                "v": "string"
-                            },
-                            {
-                                "l": {
-                                    "en-US": "JSON"
-                                },
-                                "v": "json"
-                            }
+                        "types": [
+                            "str",
+                            "env"
                         ]
                     }
                 }
@@ -2708,7 +2698,7 @@
         "type": "function",
         "z": "f36dcac84e162f71",
         "name": "Build Response",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet result   = msg.llm.result;\nlet choices  = msg.llm.result.choices\nlet response = choices[0].message.content\n\n// Initialize history juste in case\nmsg.llm.prompt.history = msg.llm.prompt.history || []\n\n// Push + Backup + Exit\nlet options = msg.llm.options\nif (!options.response_format || options.response_format.type != \"json_object\") {\n    msg.llm.prompt.history.push({ role: \"assistant\", content: response })\n    msg.llm.response = response\n    return node.send(msg, false);\n}\n\n// Strong parse JSON\nlet parsing = MOONSHOTS.UTIL.parseJSON(response)\nresponse = parsing.json || { text: parsing.value } // We ask for a JSON object\n\n// By design we store the text response in text variable\nmsg.llm.prompt.history.push({ role: \"assistant\", content: response.text }) \nmsg.llm.response = response\n\nreturn node.send(msg,false);",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet result   = msg.llm.result;\nlet choices  = msg.llm.result.choices\nlet response = choices[0].message.content\n\n// Initialize history juste in case\nmsg.llm.prompt.history = msg.llm.prompt.history || []\n\n// Push + Backup + Exit\n/*\nlet options = msg.llm.options\nif (!options.response_format || options.response_format.type != \"json_object\") {\n    msg.llm.prompt.history.push({ role: \"assistant\", content: response })\n    msg.llm.response = response\n    return node.send(msg, false);\n}*/\n\n// Strong parse JSON\nlet parsing = MOONSHOTS.UTIL.parseJSON(response)\nresponse = parsing.json || { text: parsing.value } // We ask for a JSON object\n\n// By design we store the text response in text variable\nmsg.llm.prompt.history.push({ role: \"assistant\", content: response.text }) \nmsg.llm.response = response\n\nreturn node.send(msg,false);",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2766,7 +2756,7 @@
         "type": "function",
         "z": "f36dcac84e162f71",
         "name": "Partial Response",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet result    = msg.llm.result;\nlet choices   = msg.llm.result.choices\nlet response  = choices[0].delta.content\n\nconst pushToHistory = (content, override) => {\n    let history = msg.llm.prompt.history = msg.llm.prompt.history || []\n    if (history.length == 0) { return history.push({ role: \"assistant\", content: content }) }\n    \n    let lastHist = history[history.length - 1] // First time we answer\n    if (lastHist.role !== \"assistant\") { return history.push({ role: \"assistant\", content: content }) }\n\n    // Cumulative answer for streaming unless it's JSON's text\n    lastHist.content = override ? content : (lastHist.content + content) \n}\n\n// Push + Backup + Exit\nlet options = msg.llm.options\nif (!options.response_format || options.response_format.type != \"json_object\") {\n    pushToHistory(response)\n    msg.llm.response = response\n    return node.send(msg, false);\n}\n\n// ------------------------------------------\n//  JSON Part\n// ------------------------------------------\n\n// We are working on full response not just the delta\nresponse = msg.llm.stream.content\n\nlet parsing = MOONSHOTS.UTIL.parseJSON(response, true)\nresponse = parsing.json || { text: parsing.value } // We ask for a JSON object\nif (parsing.err){ node.warn(parsing) }\n\n// By design we store the text response in text variable.\n// We override the last assistant instead of concatenate because it's JSON\n// It could be a side effect id a tool has been called in between\nif (parsing.json?.text){ pushToHistory(parsing.json?.text, true) }\n\nreturn node.send(msg,false);",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet result    = msg.llm.result;\nlet choices   = msg.llm.result.choices\nlet response  = choices[0].delta.content\n\nconst pushToHistory = (content, override) => {\n    let history = msg.llm.prompt.history = msg.llm.prompt.history || []\n    if (history.length == 0) { return history.push({ role: \"assistant\", content: content }) }\n    \n    let lastHist = history[history.length - 1] // First time we answer\n    if (lastHist.role !== \"assistant\") { return history.push({ role: \"assistant\", content: content }) }\n\n    // Cumulative answer for streaming unless it's JSON's text\n    lastHist.content = override ? content : (lastHist.content + content) \n}\n\n// FIXME with Ollama : Push + Backup + Exit \nlet options = msg.llm.options\nif (!options.response_format || options.response_format.type != \"json_object\") {\n    pushToHistory(response)\n    msg.llm.response = response\n    return node.send(msg, false);\n}\n\n// ------------------------------------------\n//  JSON Part\n// ------------------------------------------\n\n// We are working on full response not just the delta\nresponse = msg.llm.stream.content\n\nlet parsing = MOONSHOTS.UTIL.parseJSON(response, true)\nresponse = parsing.json || { text: parsing.value } // We ask for a JSON object\nif (parsing.err){ node.warn(parsing) }\n\n// By design we store the text response in text variable.\n// We override the last assistant instead of concatenate because it's JSON\n// It could be a side effect id a tool has been called in between\nif (parsing.json?.text){ pushToHistory(parsing.json?.text, true) }\n\nreturn node.send(msg,false);",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3206,6 +3196,34 @@
                 }
             },
             {
+                "name": "env-options-format",
+                "type": "str",
+                "value": "json",
+                "ui": {
+                    "icon": "font-awesome/fa-code",
+                    "label": {
+                        "en-US": "Format"
+                    },
+                    "type": "select",
+                    "opts": {
+                        "opts": [
+                            {
+                                "l": {
+                                    "en-US": "String"
+                                },
+                                "v": "string"
+                            },
+                            {
+                                "l": {
+                                    "en-US": "JSON"
+                                },
+                                "v": "json"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
                 "name": "env-stream",
                 "type": "str",
                 "value": "false",
@@ -3454,11 +3472,6 @@
                 "type": "env"
             },
             {
-                "name": "env-options-format",
-                "value": "json",
-                "type": "str"
-            },
-            {
                 "name": "env-options",
                 "value": "env-options",
                 "type": "env"
@@ -3614,7 +3627,7 @@
         "type": "function",
         "z": "681160babea0f830",
         "name": "LLM Retrieve Context",
-        "func": "if (!msg._client_id) { node.warn('Missing _client_id'); return msg; }\n\nlet MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet SOCKETS = MOONSHOTS['web-socket'] = MOONSHOTS['web-socket'] || {}\n\nlet socket = SOCKETS[msg._client_id]\nif (socket === undefined) { node.warn('No socket available'); return msg; }\n\nsocket.chat = socket.chat || {}\n\n\nmsg.cfg     = msg.cfg     || {}\nmsg.cfg.llm = msg.cfg.llm || {}\nmsg.cfg.llm.context = socket.chat.context || {}\n\n\n// Merge with caller\nlet llm_context = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-context\"))\nif (llm_context && (typeof llm_context === 'string')){\n    msg.cfg.llm.context[\"chat\"] = llm_context\n}\nreturn msg;",
+        "func": "if (!msg._client_id) { node.warn('Missing _client_id'); return msg; }\n\nlet MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet SOCKETS = MOONSHOTS['web-socket'] = MOONSHOTS['web-socket'] || {}\n\nlet socket = SOCKETS[msg._client_id]\nif (socket === undefined) { node.warn('No socket available'); return msg; }\n\nsocket.chat = socket.chat || {}\n\n\nmsg.cfg     = msg.cfg     || {}\nmsg.cfg.llm = msg.cfg.llm || {}\nmsg.cfg.llm.context = socket.chat.context || {}\n\n\n// Merge with caller\nlet llm_context = MOONSHOTS.UTIL.getMessageProperty(msg, env.get(\"env-prompt-context\"))\nif (llm_context && (typeof llm_context === 'string')){\n    msg.cfg.llm.context[\"chat\"] = llm_context\n    // node.warn({ debug: \">>>\", llm_context })\n}\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6542,7 +6555,7 @@
         "type": "function",
         "z": "63608c8ffd25253a",
         "name": "OLLAMA",
-        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-model'] = MOONSHOTS['llm-model'] || {}\n\n// ------------------------------------------\n//  HELPERS\n// ------------------------------------------\n\nconst showOllama = async (url, name) => {\n  return await fetchOllama(url.replace(/chat$/, \"show\"), {name});\n}\n\nconst fetchOllama = async (url, post) => { \n  const controller = new AbortController();\n  const timeout    = setTimeout(() => controller.abort(), 20000);\n  const response   = await fetch(url, {\n    signal: controller.signal,\n    method: 'POST', headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(post)\n  });\n  clearTimeout(timeout);\n\n  let result = await response.text();\n  if (!response.ok) { \n    node.warn({ error: `HTTP ${response.status} - ${response.statusText}`, result, url, post})\n  }\n  \n  try { result = JSON.parse(result) } catch(ex){ node.warn(ex) }\n  return result;\n}\n\nconst handleResults = async (results, options) => {\n  \n  let message = results.message\n  if (!message) return;\n\n  let finish_reason  = results.done_reason || 'stop'\n  if (message.tool_calls){ finish_reason = 'tool_calls' }\n\n  // We try to parse the in case of tool_calls\n  let parsing = MOONSHOTS.UTIL.parseJSON(message.content)\n  message.content = parsing.value\n\n  // It could contains tool_calls to retrieve and set\n  if (parsing.json?.tool_calls){\n    message.tool_calls = parsing.json.tool_calls\n    message.tool_calls.forEach(d => d.function.arguments = JSON.stringify(d.function.arguments));\n    finish_reason = 'tool_calls'\n    delete parsing.json.tool_calls\n  }\n\n  // Anyway if we have JSON we stringify it back\n  if (parsing.json){\n    message.content = JSON.stringify(parsing.json)\n  }\n\n  // Follow OpenAI structure\n  results.choices = [{ finish_reason, message }]\n}\n\n// ------------------------------------------\n//  CLIENT\n// ------------------------------------------\n\nlet config   = msg.llm.model\nlet metadata = await showOllama(config.endpoint, config.id);\n\nconfig.client = {\n    chat  : async (options) => {\n      let post = { \"model\": config.id, \"stream\" : options.stream }\n      if (options?.response_format?.type == 'json_object') { post.format = \"json\"; }\n\n      // Options\n      post.num_ctx = 8192\n      if (options.temperature)       { post.temperature = options.temperature; }\n      if (options.max_tokens)        { post.num_predict = options.max_tokens;  }\n      if (options.frequency_penalty) { post.frequency_penalty = options.frequency_penalty; }\n      if (options.presence_penalty)  { post.presence_penalty  = options.presence_penalty; }\n      // repeat_penalty custom ollama\n\n      // Tools\n      if (metadata.capabilities.includes(\"tools\") && options.tools){\n        post.tools = options.tools\n      }\n\n      // Messages\n      post.messages = options.messages\n      let results = await fetchOllama(config.endpoint, post)\n      node.warn({post, results})\n\n      // Normalize, Tools, \n      await handleResults(results, options)\n      \n      return results\n    },\n    embed : async (options) => {\n      if (!config.id){ return node.warn('Missing Model ID') }\n      let post = { \"model\" : config.id, \"prompt\": options.input }\n      let resp = await fetchOllama(config.endpoint, post)\n      let results = { \"data\" : [{\"object\": \"embedding\", \"index\": 0, \"embedding\": resp.embedding, \"model\": post.model }]}\n      //node.warn(results)\n      return results\n    }\n}\n\nCONTEXT[config.id] = config;\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
+        "func": "let MOONSHOTS = global.get('__MOONSHOTS__') || {}\nlet CONTEXT = MOONSHOTS['llm-model'] = MOONSHOTS['llm-model'] || {}\n\n// ------------------------------------------\n//  HELPERS\n// ------------------------------------------\n\nconst showOllama = async (url, name) => {\n  return await fetchOllama(url.replace(/chat$/, \"show\"), {name});\n}\n\nconst fetchOllama = async (url, post) => { \n  const controller = new AbortController();\n  const timeout    = setTimeout(() => controller.abort(), 60000);\n  const response   = await fetch(url, {\n    signal: controller.signal,\n    method: 'POST', headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(post)\n  });\n  clearTimeout(timeout);\n\n  let result = await response.text();\n  if (!response.ok) { \n    node.warn({ error: `HTTP ${response.status} - ${response.statusText}`, result, url, post})\n  }\n  \n  try { result = JSON.parse(result) } catch(ex){ node.warn(ex) }\n  return result;\n}\n\nconst handleResults = async (results, options) => {\n  \n  let message = results.message\n  if (!message) return;\n\n  let finish_reason  = results.done_reason || 'stop'\n  if (message.tool_calls){ finish_reason = 'tool_calls' }\n\n  // Extract <think> if any\n  const raw = message.content\n  const thinkRegex = /<think>(.*?)<\\/think>/gs;\n  message.thoughts = [...raw.matchAll(thinkRegex)].map(m => m[1]);\n  message.content  = raw.replace(thinkRegex, '').trim(); \n\n  // We try to parse the in case of tool_calls\n  let parsing = MOONSHOTS.UTIL.parseJSON(message.content)\n  message.content = parsing.value\n\n  // CONTENT could contains tool_calls or function_call. It's a bug form the model\n  if (parsing.json?.tool_calls || parsing.json?.function_call){\n    message.tool_calls = parsing.json.tool_calls || parsing.json.function_call\n    message.tool_calls.forEach(d => d.function.arguments = JSON.stringify(d.function.arguments));\n    finish_reason = 'tool_calls'\n    delete parsing.json.tool_calls\n    delete parsing.json.function_call\n  }\n\n  // Anyway if we have JSON we stringify it back\n  if (parsing.json){\n    message.content = JSON.stringify(parsing.json)\n  }\n\n  // Follow OpenAI structure\n  results.choices = [{ finish_reason, message }]\n}\n\n// ------------------------------------------\n//  CLIENT\n// ------------------------------------------\n\nlet config   = msg.llm.model\nlet metadata = await showOllama(config.endpoint, config.id);\n\nconfig.client = {\n    chat  : async (options) => {\n      let post = { \"model\": config.id, \"stream\" : options.stream }\n      if (options?.response_format?.type == 'json_object') { post.format = \"json\"; }\n\n      // Options\n      if (options.num_ctx)           { post.num_ctx = options.num_ctx; }\n      if (options.temperature)       { post.temperature = options.temperature; }\n      if (options.max_tokens)        { post.num_predict = options.max_tokens;  }\n      if (options.frequency_penalty) { post.frequency_penalty = options.frequency_penalty; }\n      if (options.presence_penalty)  { post.presence_penalty  = options.presence_penalty; }\n      // repeat_penalty custom ollama\n\n      // Tools\n      if (metadata.capabilities.includes(\"tools\") && options.tools){\n        post.tools = options.tools\n      }\n\n      // Messages\n      post.messages = options.messages\n      let results = await fetchOllama(config.endpoint, post)\n      //node.warn({msg: 'Before', post, results})\n\n      // Normalize, Tools, \n      await handleResults(results, options)\n      //node.warn({ msg: 'After', post, results })\n\n      return results\n    },\n    embed : async (options) => {\n      if (!config.id){ return node.warn('Missing Model ID') }\n      let post = { \"model\" : config.id, \"prompt\": options.input }\n      let resp = await fetchOllama(config.endpoint, post)\n      let results = { \"data\" : [{\"object\": \"embedding\", \"index\": 0, \"embedding\": resp.embedding, \"model\": post.model }]}\n      //node.warn(results)\n      return results\n    }\n}\n\nCONTEXT[config.id] = config;\nglobal.set('__MOONSHOTS__', MOONSHOTS)\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
