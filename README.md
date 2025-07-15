@@ -162,6 +162,28 @@ sudo service nginx
 
 Use this sample config:
 ```
+map $cache $control {
+  1 "public, mqx-age=86400";
+}
+
+map $cache $expires {
+  1 1d;
+  default off; # or some other default value
+}
+
+map $uri $cache {
+  ~*\.(js|css|png|jpe?g|gif|ico)$    1;
+}
+
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  '' close;
+}
+
+upstream websocket {
+  server 127.0.0.1:1880;
+}
+
 server {
     #only ports 80 and 443 are open
     listen 80;
